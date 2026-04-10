@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  role          String   @default("buyer") // "producer" or "buyer"
+  avatar        String?
+  bio           String?
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  beats     Beat[]
+  orders    Order[]
+}
+
+model Beat {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  genre         String
+  subGenre      String?
+  bpm           Int
+  key           String   @default("Cm")
+  mood          String?
+  tags          String   @default("[]") // JSON array stored as string
+  coverUrl      String
+  audioPreviewUrl String
+  audioFileUrl  String?
+  plays         Int      @default(0)
+  sales         Int      @default(0)
+  status        String   @default("active") // "active", "draft", "sold_exclusive"
+  exclusiveSold Boolean  @default(false)
+  basicPrice    Float    @default(999)    // NPR
+  premiumPrice  Float    @default(2999)   // NPR
+  exclusivePrice Float   @default(9999)   // NPR
+  producerId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  producer User  @relation(fields: [producerId], references: [id])
+  orders   Order[]
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  buyerId       String
+  beatId        String
+  licenseType   String   // "basic", "premium", "exclusive"
+  amount        Float
+  currency      String   @default("NPR")
+  status        String   @default("completed") // "pending", "completed", "refunded"
+  paymentMethod String   @default("esewa") // "esewa", "khalti", "stripe"
+  licensePdfUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  buyer  User   @relation(fields: [buyerId], references: [id])
+  beat   Beat   @relation(fields: [beatId], references: [id])
+}
