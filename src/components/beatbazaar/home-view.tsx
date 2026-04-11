@@ -12,11 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   BadgeCheck,
-  Music,
-  Disc3,
-  Radio,
-  Volume2,
-  Play,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,42 +31,50 @@ const GENRES = [
 ];
 
 /* Floating music symbols for the hero background */
-const FLOATING_SYMBOLS = [
-  { Icon: Music, size: 18, x: '5%', y: '15%', delay: 0, duration: 7, rotate: -15 },
-  { Icon: Music2, size: 14, x: '12%', y: '70%', delay: 1.2, duration: 8, rotate: 20 },
-  { Icon: Headphones, size: 20, x: '88%', y: '20%', delay: 0.5, duration: 9, rotate: 10 },
-  { Icon: Disc3, size: 22, x: '92%', y: '65%', delay: 2, duration: 10, rotate: -25 },
-  { Icon: Play, size: 16, x: '78%', y: '80%', delay: 0.8, duration: 7.5, rotate: 15 },
-  { Icon: Volume2, size: 14, x: '20%', y: '85%', delay: 1.8, duration: 8.5, rotate: -10 },
-  { Icon: Radio, size: 16, x: '70%', y: '12%', delay: 1.5, duration: 9.5, rotate: 25 },
-  { Icon: Music, size: 12, x: '45%', y: '8%', delay: 0.3, duration: 6.5, rotate: -20 },
-  { Icon: Disc3, size: 14, x: '35%', y: '90%', delay: 2.5, duration: 8, rotate: 30 },
-  { Icon: Music2, size: 16, x: '95%', y: '40%', delay: 1, duration: 7, rotate: -5 },
-  { Icon: Play, size: 12, x: '3%', y: '50%', delay: 2.2, duration: 9, rotate: 15 },
-  { Icon: Volume2, size: 18, x: '55%', y: '5%', delay: 0.7, duration: 7.5, rotate: -30 },
-  { Icon: Radio, size: 12, x: '82%', y: '50%', delay: 1.8, duration: 8, rotate: 20 },
-  { Icon: Music, size: 10, x: '25%', y: '25%', delay: 3, duration: 6, rotate: 10 },
-];
-
-function FloatingSymbol({ Icon, size, x, y, delay, duration, rotate }: {
-  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+type MusicSymbol = {
+  symbol: string;
   size: number;
-  x: string;
-  y: string;
+  x: number;
+  y: number;
   delay: number;
   duration: number;
-  rotate: number;
-}) {
+  color: string;
+  floatRange: number;
+};
+
+const MUSIC_SYMBOLS: MusicSymbol[] = [
+  { symbol: '♪', size: 32, x: 5, y: 15, delay: 0, duration: 6, color: 'text-emerald-400', floatRange: 18 },
+  { symbol: '♫', size: 28, x: 15, y: 75, delay: 1.5, duration: 7, color: 'text-teal-400', floatRange: 14 },
+  { symbol: '🎵', size: 26, x: 85, y: 20, delay: 0.8, duration: 8, color: '', floatRange: 20 },
+  { symbol: '🎶', size: 30, x: 90, y: 60, delay: 2.2, duration: 7, color: '', floatRange: 16 },
+  { symbol: '♩', size: 24, x: 75, y: 80, delay: 1.2, duration: 6.5, color: 'text-emerald-300', floatRange: 12 },
+  { symbol: '♬', size: 36, x: 8, y: 50, delay: 3, duration: 9, color: 'text-teal-300', floatRange: 22 },
+  { symbol: '🎵', size: 22, x: 70, y: 10, delay: 0.5, duration: 7.5, color: '', floatRange: 15 },
+  { symbol: '♪', size: 20, x: 45, y: 5, delay: 2.8, duration: 6, color: 'text-emerald-500', floatRange: 10 },
+  { symbol: '🎼', size: 24, x: 35, y: 88, delay: 1.8, duration: 8, color: '', floatRange: 16 },
+  { symbol: '♫', size: 34, x: 93, y: 40, delay: 0.3, duration: 7, color: 'text-teal-400', floatRange: 20 },
+  { symbol: '♪', size: 18, x: 25, y: 30, delay: 4, duration: 6.5, color: 'text-emerald-400', floatRange: 10 },
+  { symbol: '🔊', size: 22, x: 55, y: 3, delay: 1, duration: 7.5, color: '', floatRange: 14 },
+  { symbol: '♬', size: 26, x: 80, y: 50, delay: 2.5, duration: 8, color: 'text-teal-300', floatRange: 18 },
+  { symbol: '🎤', size: 20, x: 2, y: 80, delay: 3.5, duration: 7, color: '', floatRange: 12 },
+  { symbol: '♪', size: 28, x: 60, y: 85, delay: 0.7, duration: 6, color: 'text-emerald-500', floatRange: 15 },
+  { symbol: '🎧', size: 22, x: 42, y: 70, delay: 2, duration: 8.5, color: '', floatRange: 14 },
+  { symbol: '♫', size: 20, x: 18, y: 8, delay: 1.3, duration: 7, color: 'text-teal-500', floatRange: 12 },
+  { symbol: '🎹', size: 20, x: 95, y: 85, delay: 3.2, duration: 9, color: '', floatRange: 10 },
+  { symbol: '♪', size: 24, x: 50, y: 42, delay: 0.2, duration: 6.5, color: 'text-emerald-300', floatRange: 16 },
+  { symbol: '♬', size: 30, x: 30, y: 55, delay: 1.7, duration: 7.5, color: 'text-teal-400', floatRange: 18 },
+];
+
+function FloatingMusicSymbol({ symbol, size, x, y, delay, duration, color, floatRange }: MusicSymbol) {
   return (
     <motion.div
       className="absolute pointer-events-none select-none"
-      style={{ left: x, top: y }}
-      initial={{ opacity: 0, scale: 0 }}
+      style={{ left: `${x}%`, top: `${y}%` }}
+      initial={{ opacity: 0, scale: 0, y: 0 }}
       animate={{
-        opacity: [0, 0.15, 0.25, 0.15, 0],
-        scale: [0, 1.2, 1, 1.1, 0],
-        y: [0, -12, 8, -6, 0],
-        rotate: [rotate, rotate + 10, rotate - 5, rotate + 8, rotate],
+        opacity: [0, 0.5, 0.7, 0.5, 0.3, 0.5, 0],
+        scale: [0, 1.4, 1, 1.2, 0.9, 1.1, 0],
+        y: [0, -floatRange, floatRange * 0.5, -floatRange * 0.7, floatRange * 0.3, -floatRange * 0.4, 0],
       }}
       transition={{
         duration,
@@ -80,10 +83,12 @@ function FloatingSymbol({ Icon, size, x, y, delay, duration, rotate }: {
         ease: 'easeInOut',
       }}
     >
-      <Icon
-        className="text-emerald-500/40"
-        style={{ width: size, height: size }}
-      />
+      <span
+        className={`font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.4)] ${color}`}
+        style={{ fontSize: size, lineHeight: 1 }}
+      >
+        {symbol}
+      </span>
     </motion.div>
   );
 }
@@ -95,7 +100,7 @@ function EqualizerBars() {
       {[0.4, 0.7, 1, 0.6, 0.8, 0.5, 0.9, 0.3, 0.7, 0.55, 0.85, 0.45, 0.65, 0.35, 0.75].map((maxH, i) => (
         <motion.div
           key={i}
-          className="w-[3px] rounded-full bg-emerald-500/15"
+          className="w-[3px] rounded-full bg-emerald-500/25"
           animate={{
             height: [4, maxH * 28 + 4, 4],
           }}
@@ -169,8 +174,8 @@ export function HomeView() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]" />
 
         {/* Floating music symbols */}
-        {FLOATING_SYMBOLS.map((sym, i) => (
-          <FloatingSymbol key={i} {...sym} />
+        {MUSIC_SYMBOLS.map((sym, i) => (
+          <FloatingMusicSymbol key={i} {...sym} />
         ))}
 
         {/* Pulsing equalizer bars at bottom */}

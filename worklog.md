@@ -78,3 +78,23 @@ Stage Summary:
 - Custom AI-generated logo integrated in navbar (desktop + mobile), footer, and auth dialog
 - All files compile cleanly with zero lint errors
 - App running correctly on dev server
+---
+Task ID: 4
+Agent: Main Agent
+Task: Replace invisible Lucide floating symbols with bold music note characters and emoji
+
+Work Log:
+- Removed old FloatingSymbol component that used Lucide icons (Music, Disc3, etc.) with max opacity 0.25
+- Created new MUSIC_SYMBOLS array with 20 music symbols: ♪, ♫, ♩, ♬, 🎵, 🎶, 🎼, 🔊, 🎤, 🎧, 🎹
+- Each symbol has unique position (x%, y%), size (18-36px), delay, duration, emerald/teal color, and float range
+- New FloatingMusicSymbol component: opacity pulses up to 0.7, scale pops to 1.4x, y floats with 7-step keyframes
+- Added emerald glow drop-shadow for better visibility on dark background
+- Cleaned up unused Lucide icon imports (Music, Disc3, Radio, Volume2, Play)
+- Boosted equalizer bars opacity from 15% to 25%
+- ESLint passes with 0 errors, dev server compiles successfully
+
+Stage Summary:
+- Hero background now has 20 visible, colorful music note symbols popping out and floating
+- Mix of Unicode music notes (♪♫♩♬) in emerald/teal + emoji symbols (🎵🎶🎼🔊🎤🎧🎹)
+- Much more dramatic and visible than the previous near-invisible Lucide icon approach
+- Equalizer bars also slightly more visible
