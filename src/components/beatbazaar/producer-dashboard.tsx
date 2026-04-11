@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign,
@@ -12,6 +12,11 @@ import {
   Loader2,
   Eye,
   Package,
+  ImageIcon,
+  Music,
+  X,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,11 +53,11 @@ const GENRES = [
 ];
 
 const MOODS = [
-  'Chill', 'Dark', 'Energetic', 'Melancholic', 'Aggressive', 'Happy', 'Romantic', 'Epic',
+  'Chill', 'Dark', 'Energetic', 'Melancholic', 'Aggressive', 'Romantic', 'Mysterious', 'Uplifting',
 ];
 
 const KEYS = [
-  'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
+  'Am', 'A#m', 'Bm', 'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m',
 ];
 
 interface DashboardData {
@@ -99,10 +104,24 @@ export function ProducerDashboard() {
     bpm: '',
     key: 'Cm',
     mood: '',
+    description: '',
+    tags: '',
     basicPrice: '999',
     premiumPrice: '2999',
     exclusivePrice: '9999',
   });
+
+  // File states
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string>('');
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string>('');
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // Audio preview player
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -120,50 +139,166 @@ export function ProducerDashboard() {
     fetchDashboard();
   }, [currentUser?.id]);
 
+  // Cleanup audio preview URL and audio element on unmount
+  useEffect(() => {
+    return () => {
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+    };
+  }, [audioPreviewUrl]);
+
+  const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/webm'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|aac|flac|webm|m4a)$/i)) {
+      useAppStore.getState().showToast('Please upload an audio file (MP3, WAV, OGG, AAC, FLAC)', 'error');
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      useAppStore.getState().showToast('Audio file must be under 50MB', 'error');
+      return;
+    }
+
+    setAudioFile(file);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    const url = URL.createObjectURL(file);
+    setAudioPreviewUrl(url);
+
+    // Stop any currently playing preview
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+    }
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      useAppStore.getState().showToast('Please upload an image file (JPG, PNG, WebP)', 'error');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      useAppStore.getState().showToast('Cover image must be under 10MB', 'error');
+      return;
+    }
+
+    setCoverFile(file);
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    setCoverPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const togglePreviewPlay = () => {
+    if (!audioPreviewUrl) return;
+
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = new Audio(audioPreviewUrl);
+      previewAudioRef.current.addEventListener('ended', () => setIsPreviewPlaying(false));
+    }
+
+    if (isPreviewPlaying) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+    } else {
+      previewAudioRef.current.play();
+      setIsPreviewPlaying(true);
+    }
+  };
+
+  const removeAudioFile = () => {
+    setAudioFile(null);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl('');
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setIsPreviewPlaying(false);
+    if (audioInputRef.current) audioInputRef.current.value = '';
+  };
+
+  const removeCoverFile = () => {
+    setCoverFile(null);
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    setCoverPreviewUrl('');
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!audioFile) {
+      useAppStore.getState().showToast('Please upload an audio file', 'error');
+      return;
+    }
+
     setUploading(true);
     try {
-      const res = await fetch('/api/beats', {
+      const formData = new FormData();
+      formData.append('audio', audioFile);
+      if (coverFile) formData.append('cover', coverFile);
+      formData.append('title', uploadForm.title);
+      formData.append('description', uploadForm.description);
+      formData.append('genre', uploadForm.genre);
+      formData.append('bpm', uploadForm.bpm);
+      formData.append('key', uploadForm.key);
+      formData.append('mood', uploadForm.mood);
+      formData.append('tags', uploadForm.tags || '[]');
+      formData.append('basicPrice', uploadForm.basicPrice);
+      formData.append('premiumPrice', uploadForm.premiumPrice);
+      formData.append('exclusivePrice', uploadForm.exclusivePrice);
+      formData.append('producerId', currentUser?.id || '');
+
+      const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...uploadForm,
-          bpm: parseInt(uploadForm.bpm),
-          basicPrice: parseFloat(uploadForm.basicPrice),
-          premiumPrice: parseFloat(uploadForm.premiumPrice),
-          exclusivePrice: parseFloat(uploadForm.exclusivePrice),
-          producerId: currentUser?.id,
-          coverUrl: `https://picsum.photos/seed/${uploadForm.title.replace(/\s/g, '')}/600/600`,
-          audioPreviewUrl: '#',
-        }),
+        body: formData,
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
-        useAppStore.getState().showToast('Beat uploaded successfully!', 'success');
+        useAppStore.getState().showToast('Beat uploaded successfully! It will appear in browse shortly.', 'success');
         setUploadOpen(false);
-        setUploadForm({
-          title: '',
-          genre: '',
-          bpm: '',
-          key: 'Cm',
-          mood: '',
-          basicPrice: '999',
-          premiumPrice: '2999',
-          exclusivePrice: '9999',
-        });
+        resetForm();
         // Refresh dashboard
         const dashRes = await fetch(`/api/dashboard?producerId=${currentUser?.id}`);
         setDashboard(await dashRes.json());
       } else {
-        useAppStore.getState().showToast('Failed to upload beat', 'error');
+        useAppStore.getState().showToast(data.error || 'Failed to upload beat', 'error');
       }
     } catch {
-      useAppStore.getState().showToast('Network error', 'error');
+      useAppStore.getState().showToast('Network error. Please try again.', 'error');
     } finally {
       setUploading(false);
     }
+  };
+
+  const resetForm = () => {
+    setUploadForm({
+      title: '',
+      genre: '',
+      bpm: '',
+      key: 'Cm',
+      mood: '',
+      description: '',
+      tags: '',
+      basicPrice: '999',
+      premiumPrice: '2999',
+      exclusivePrice: '9999',
+    });
+    removeAudioFile();
+    removeCoverFile();
   };
 
   if (loading) {
@@ -206,7 +341,10 @@ export function ProducerDashboard() {
           <p className="text-muted-foreground mt-1">Manage your beats and track sales</p>
         </div>
 
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <Dialog open={uploadOpen} onOpenChange={(open) => {
+          if (!open) resetForm();
+          setUploadOpen(open);
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold">
               <Plus className="w-4 h-4 mr-2" />
@@ -218,8 +356,130 @@ export function ProducerDashboard() {
               <DialogTitle>Upload New Beat</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleUpload} className="space-y-4 pt-2">
+
+              {/* Audio File Upload */}
               <div className="space-y-2">
-                <Label className="text-sm">Beat Title</Label>
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Music className="w-4 h-4 text-emerald-500" />
+                  Audio File <span className="text-destructive">*</span>
+                </Label>
+                {!audioFile ? (
+                  <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-border/70 cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
+                      <Upload className="w-5 h-5 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Click to upload audio</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">MP3, WAV, OGG, AAC, FLAC (max 50MB)</p>
+                    </div>
+                    <input
+                      ref={audioInputRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={handleAudioFileChange}
+                    />
+                  </label>
+                ) : (
+                  <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                          <Music2 className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{audioFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(audioFile.size / (1024 * 1024)).toFixed(1)} MB
+                          </p>
+                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={togglePreviewPlay}
+                        >
+                          {isPreviewPlaying ? (
+                            <span className="flex gap-0.5 items-end h-4">
+                              {[...Array(3)].map((_, i) => (
+                                <span key={i} className="w-0.5 bg-emerald-500 rounded-full wave-bar" />
+                              ))}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-emerald-500 font-semibold">▶</span>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={removeAudioFile}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cover Image Upload */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-amber-500" />
+                  Cover Image <span className="text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                {!coverFile ? (
+                  <label className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-border/70 cursor-pointer hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-amber-500/10 transition-colors">
+                      <ImageIcon className="w-5 h-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Upload cover art</p>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, WebP (max 10MB)</p>
+                    </div>
+                    <input
+                      ref={coverInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCoverFileChange}
+                    />
+                  </label>
+                ) : (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                    <img
+                      src={coverPreviewUrl}
+                      alt="Cover preview"
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{coverFile.name}</p>
+                      <p className="text-xs text-muted-foreground">{(coverFile.size / 1024).toFixed(0)} KB</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={removeCoverFile}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Separator className="bg-border/50" />
+
+              {/* Beat Details */}
+              <div className="space-y-2">
+                <Label className="text-sm">Beat Title <span className="text-destructive">*</span></Label>
                 <Input
                   placeholder="Enter beat title"
                   className="bg-secondary border-border/50"
@@ -231,7 +491,7 @@ export function ProducerDashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-sm">Genre</Label>
+                  <Label className="text-sm">Genre <span className="text-destructive">*</span></Label>
                   <Select value={uploadForm.genre} onValueChange={(v) => setUploadForm({ ...uploadForm, genre: v })}>
                     <SelectTrigger className="bg-secondary border-border/50">
                       <SelectValue placeholder="Select genre" />
@@ -244,7 +504,7 @@ export function ProducerDashboard() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm">BPM</Label>
+                  <Label className="text-sm">BPM <span className="text-destructive">*</span></Label>
                   <Input
                     type="number"
                     placeholder="140"
@@ -283,6 +543,26 @@ export function ProducerDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Description</Label>
+                <textarea
+                  className="w-full bg-secondary border border-border/50 rounded-md p-3 text-sm resize-none focus:outline-none focus:border-emerald-500/50 min-h-[60px]"
+                  placeholder="Describe your beat..."
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Tags (comma separated)</Label>
+                <Input
+                  placeholder="e.g. nephop, dark, 808, trap"
+                  className="bg-secondary border-border/50"
+                  value={uploadForm.tags}
+                  onChange={(e) => setUploadForm({ ...uploadForm, tags: e.target.value })}
+                />
               </div>
 
               <Separator className="bg-border/50" />
@@ -326,17 +606,29 @@ export function ProducerDashboard() {
                 </div>
               </div>
 
+              {!audioFile && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <p className="text-xs text-amber-500">Audio file is required to upload a beat.</p>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-semibold"
-                disabled={uploading}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-semibold h-11"
+                disabled={uploading || !audioFile}
               >
                 {uploading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
                 ) : (
-                  <Upload className="w-4 h-4 mr-2" />
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Beat
+                  </>
                 )}
-                Upload Beat
               </Button>
             </form>
           </DialogContent>
@@ -377,7 +669,7 @@ export function ProducerDashboard() {
         </CardHeader>
         <CardContent>
           {recentOrders.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No orders yet</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">No orders yet. Upload beats to start selling!</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -431,52 +723,80 @@ export function ProducerDashboard() {
       {/* My Beats */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">My Beats</h2>
-        <div className="overflow-x-auto">
-          <Table className="bg-card border border-border/50 rounded-xl overflow-hidden">
-            <TableHeader>
-              <TableRow className="border-border/50 hover:bg-transparent">
-                <TableHead className="text-muted-foreground w-16"></TableHead>
-                <TableHead className="text-muted-foreground">Title</TableHead>
-                <TableHead className="text-muted-foreground">Genre</TableHead>
-                <TableHead className="text-muted-foreground">BPM</TableHead>
-                <TableHead className="text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> Plays</TableHead>
-                <TableHead className="text-muted-foreground flex items-center gap-1"><ShoppingCart className="w-3.5 h-3.5" /> Sales</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {myBeats.map((beat) => (
-                <TableRow key={beat.id} className="border-border/30">
-                  <TableCell>
-                    <img src={beat.coverUrl} alt={beat.title} className="w-10 h-10 rounded-md object-cover" />
-                  </TableCell>
-                  <TableCell className="font-medium text-sm">{beat.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-border/50 text-muted-foreground text-xs">
-                      {beat.genre}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{beat.bpm}</TableCell>
-                  <TableCell className="text-sm">{beat.plays}</TableCell>
-                  <TableCell className="text-sm">{beat.sales}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        beat.status === 'active'
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : beat.status === 'sold_exclusive'
-                          ? 'bg-purple-500/10 text-purple-500'
-                          : 'bg-secondary text-muted-foreground'
-                      }
-                    >
-                      {beat.status === 'active' ? 'Active' : beat.status === 'sold_exclusive' ? 'Exclusive Sold' : beat.status}
-                    </Badge>
-                  </TableCell>
+        {myBeats.length === 0 ? (
+          <Card className="bg-card border-border/50 p-8 text-center">
+            <Music2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-medium mb-1">No beats uploaded yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">Upload your first beat to start selling!</p>
+            <Button
+              className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold"
+              onClick={() => setUploadOpen(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Your First Beat
+            </Button>
+          </Card>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="bg-card border border-border/50 rounded-xl overflow-hidden">
+              <TableHeader>
+                <TableRow className="border-border/50 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground w-16"></TableHead>
+                  <TableHead className="text-muted-foreground">Title</TableHead>
+                  <TableHead className="text-muted-foreground">Genre</TableHead>
+                  <TableHead className="text-muted-foreground">BPM</TableHead>
+                  <TableHead className="text-muted-foreground flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> Plays</TableHead>
+                  <TableHead className="text-muted-foreground flex items-center gap-1"><ShoppingCart className="w-3.5 h-3.5" /> Sales</TableHead>
+                  <TableHead className="text-muted-foreground">Audio</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {myBeats.map((beat) => (
+                  <TableRow key={beat.id} className="border-border/30">
+                    <TableCell>
+                      <img src={beat.coverUrl} alt={beat.title} className="w-10 h-10 rounded-md object-cover" />
+                    </TableCell>
+                    <TableCell className="font-medium text-sm">{beat.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-border/50 text-muted-foreground text-xs">
+                        {beat.genre}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{beat.bpm}</TableCell>
+                    <TableCell className="text-sm">{beat.plays}</TableCell>
+                    <TableCell className="text-sm">{beat.sales}</TableCell>
+                    <TableCell>
+                      {beat.audioPreviewUrl ? (
+                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Uploaded
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-secondary text-muted-foreground border-border/50 text-[10px]">
+                          No audio
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          beat.status === 'active'
+                            ? 'bg-emerald-500/10 text-emerald-500'
+                            : beat.status === 'sold_exclusive'
+                            ? 'bg-purple-500/10 text-purple-500'
+                            : 'bg-secondary text-muted-foreground'
+                        }
+                      >
+                        {beat.status === 'active' ? 'Active' : beat.status === 'sold_exclusive' ? 'Exclusive Sold' : beat.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </motion.div>
   );

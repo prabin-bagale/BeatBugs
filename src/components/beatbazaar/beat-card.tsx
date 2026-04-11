@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Play, Pause, Eye, ShoppingCart, BadgeCheck } from 'lucide-react';
+import { Play, Pause, Eye, ShoppingCart, BadgeCheck, Music, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore, type Beat } from '@/stores/beatbazaar-store';
@@ -12,12 +12,17 @@ interface BeatCardProps {
 }
 
 export function BeatCard({ beat, index = 0 }: BeatCardProps) {
-  const { selectBeat, playBeat, pauseBeat, currentlyPlaying, isPlaying } = useAppStore();
+  const { selectBeat, playBeat, pauseBeat, currentlyPlaying, isPlaying, showToast } = useAppStore();
 
   const isCurrentBeat = currentlyPlaying?.id === beat.id;
+  const hasAudio = !!beat.audioPreviewUrl;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!hasAudio) {
+      showToast('No audio file for this beat', 'info');
+      return;
+    }
     if (isCurrentBeat && isPlaying) {
       pauseBeat();
     } else {
@@ -52,12 +57,16 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePlay}
-              className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg shadow-emerald-500/30"
+              className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg ${
+                hasAudio
+                  ? 'bg-emerald-500 shadow-emerald-500/30'
+                  : 'bg-secondary shadow-secondary/30'
+              }`}
             >
               {isCurrentBeat && isPlaying ? (
                 <Pause className="w-6 h-6 text-black fill-black" />
               ) : (
-                <Play className="w-6 h-6 text-black fill-black ml-0.5" />
+                <Play className={`w-6 h-6 ml-0.5 ${hasAudio ? 'text-black fill-black' : 'text-muted-foreground'}`} />
               )}
             </motion.button>
           </div>
@@ -80,6 +89,13 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
           <div className="absolute top-3 right-3 bg-emerald-500/90 text-black text-xs font-bold px-2 py-1 rounded-md backdrop-blur-sm">
             NPR {beat.basicPrice.toLocaleString()}
           </div>
+          {/* Audio status badge */}
+          {!hasAudio && (
+            <div className="absolute bottom-3 right-3 bg-amber-500/80 text-black text-[9px] font-semibold px-1.5 py-0.5 rounded backdrop-blur-sm flex items-center gap-1">
+              <AlertCircle className="w-2.5 h-2.5" />
+              No audio
+            </div>
+          )}
         </div>
 
         <CardContent className="p-4">

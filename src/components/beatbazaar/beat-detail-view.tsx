@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Eye,
   ShoppingCart,
-  Clock,
   Music,
   BadgeCheck,
   Shield,
@@ -16,9 +15,10 @@ import {
   Share2,
   Heart,
   Loader2,
-  Zap,
   Crown,
   Diamond,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { BeatCard } from './beat-card';
 import { useAppStore, type Beat } from '@/stores/beatbazaar-store';
+import { getAudioElement, formatTime } from '@/lib/audio-player';
 
 const LICENSE_TIERS = [
   {
@@ -36,7 +37,6 @@ const LICENSE_TIERS = [
     color: 'emerald',
     borderClass: 'border-emerald-500/50 bg-emerald-500/5',
     selectedClass: 'border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/30',
-    badgeBg: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     features: [
       'Non-exclusive license',
       'YouTube & TikTok usage',
@@ -53,7 +53,6 @@ const LICENSE_TIERS = [
     color: 'amber',
     borderClass: 'border-amber-500/50 bg-amber-500/5',
     selectedClass: 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30',
-    badgeBg: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
     features: [
       'Non-exclusive license',
       'All platforms + Spotify',
@@ -70,7 +69,6 @@ const LICENSE_TIERS = [
     color: 'purple',
     borderClass: 'border-purple-500/50 bg-purple-500/5',
     selectedClass: 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/30',
-    badgeBg: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
     features: [
       'Exclusive ownership',
       'All platforms + sync licensing',
@@ -82,40 +80,47 @@ const LICENSE_TIERS = [
 ];
 
 export function BeatDetailView() {
-  const { selectedBeat, goBack, playBeat, pauseBeat, currentlyPlaying, isPlaying, startCheckout, showToast, selectBeat, selectProducer } = useAppStore();
+  const { selectedBeat, goBack, playBeat, pauseBeat, currentlyPlaying, isPlaying, startCheckout, showToast, selectBeat, selectProducer, updateAudioTime } = useAppStore();
   const [beat, setBeat] = useState<Beat | null>(selectedBeat);
   const [moreBeats, setMoreBeats] = useState<Beat[]>([]);
   const [selectedLicense, setSelectedLicense] = useState<'basic' | 'premium' | 'exclusive'>('basic');
   const [loading, setLoading] = useState(true);
-  const [playProgress, setPlayProgress] = useState(0);
-  const [playTime, setPlayTime] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const totalDuration = 30;
+  const [localProgress, setLocalProgress] = useState(0);
+  const [localCurrentTime, setLocalCurrentTime] = useState(0);
+  const [localDuration, setLocalDuration] = useState(0);
+  const animFrameRef = useRef<number | null>(null);
 
   const isCurrentBeat = currentlyPlaying?.id === beat?.id;
   const beatIsPlaying = isCurrentBeat && isPlaying;
+  const hasAudio = !!beat?.audioPreviewUrl;
 
+  // Sync progress from the global audio player when this beat is playing
   useEffect(() => {
     if (beatIsPlaying) {
-      intervalRef.current = setInterval(() => {
-        setPlayTime((prev) => {
-          const next = prev + 0.1;
-          if (next >= totalDuration) return 0;
-          setPlayProgress((next / totalDuration) * 100);
-          return next;
-        });
-      }, 100);
+      const tick = () => {
+        const el = getAudioElement();
+        if (isCurrentBeat && el.duration && isFinite(el.duration)) {
+          const ct = el.currentTime;
+          const dur = el.duration;
+          setLocalCurrentTime(ct);
+          setLocalDuration(dur);
+          setLocalProgress((ct / dur) * 100);
+        }
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      animFrameRef.current = requestAnimationFrame(tick);
     } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     }
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [beatIsPlaying]);
+  }, [beatIsPlaying, isCurrentBeat]);
 
   useEffect(() => {
-    setPlayProgress(0);
-    setPlayTime(0);
+    setLocalProgress(0);
+    setLocalCurrentTime(0);
+    setLocalDuration(0);
   }, [currentlyPlaying?.id]);
 
   useEffect(() => {
@@ -127,7 +132,6 @@ export function BeatDetailView() {
         const data = await res.json();
         if (data.beat) {
           setBeat(data.beat);
-          // Fetch more from same producer
           if (data.beat.producerId) {
             const moreRes = await fetch(`/api/beats?producerId=${data.beat.producerId}&limit=5`);
             const moreData = await moreRes.json();
@@ -147,10 +151,28 @@ export function BeatDetailView() {
 
   const handlePlay = () => {
     if (!beat) return;
+    if (!hasAudio) {
+      showToast('No audio file uploaded for this beat', 'info');
+      return;
+    }
     if (isCurrentBeat && isPlaying) {
       pauseBeat();
     } else {
       playBeat(beat);
+    }
+  };
+
+  const handleLocalSeek = (e: React.MouseEvent) => {
+    if (!beat || !hasAudio) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = (x / rect.width) * 100;
+    const audio = getAudioElement();
+    if (audio.duration && isFinite(audio.duration)) {
+      const seekTime = (percent / 100) * audio.duration;
+      audio.currentTime = seekTime;
+      setLocalCurrentTime(seekTime);
+      setLocalProgress(percent);
     }
   };
 
@@ -161,12 +183,6 @@ export function BeatDetailView() {
       return;
     }
     startCheckout(beat, selectedLicense);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (loading) {
@@ -238,30 +254,36 @@ export function BeatDetailView() {
                 ))}
               </div>
             )}
+
+            {/* No audio badge */}
+            {!hasAudio && (
+              <div className="absolute top-3 right-3 bg-amber-500/90 text-black text-[10px] font-bold px-2 py-1 rounded-md">
+                No Audio
+              </div>
+            )}
           </div>
 
-          {/* Mini progress bar */}
-          <div className="mt-3 px-1">
-            <div className="h-1 bg-secondary rounded-full overflow-hidden cursor-pointer"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const percent = (x / rect.width) * 100;
-                setPlayProgress(percent);
-                setPlayTime((percent / 100) * totalDuration);
-              }}
-            >
+          {/* Progress bar */}
+          <div
+            className="mt-3 px-1 cursor-pointer group"
+            onClick={handleLocalSeek}
+          >
+            <div className="h-1.5 bg-secondary rounded-full overflow-hidden relative">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all duration-100"
-                style={{ width: `${playProgress}%` }}
+                style={{ width: `${localProgress}%` }}
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ left: `${localProgress}%`, transform: `translateX(-50%) translateY(-50%)` }}
               />
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-[10px] text-muted-foreground font-mono">
-                {formatTime(playTime)}
+                {formatTime(localCurrentTime)}
               </span>
               <span className="text-[10px] text-muted-foreground font-mono">
-                {formatTime(totalDuration)}
+                {formatTime(localDuration)}
               </span>
             </div>
           </div>
@@ -316,6 +338,12 @@ export function BeatDetailView() {
             {beat.mood && (
               <Badge variant="outline" className="border-border/50 text-muted-foreground">
                 {beat.mood}
+              </Badge>
+            )}
+            {hasAudio && (
+              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                <Music className="w-3 h-3 mr-1" />
+                Audio Ready
               </Badge>
             )}
           </div>

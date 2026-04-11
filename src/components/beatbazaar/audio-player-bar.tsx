@@ -1,60 +1,147 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipBack, SkipForward, X, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, X, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useAppStore } from '@/stores/beatbazaar-store';
+import { getAudioElement, formatTime } from '@/lib/audio-player';
 
 export function AudioPlayerBar() {
-  const { currentlyPlaying, isPlaying, pauseBeat, resumeBeat, stopBeat } = useAppStore();
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const {
+    currentlyPlaying,
+    isPlaying,
+    audioDuration,
+    audioCurrentTime,
+    audioProgress,
+    pauseBeat,
+    resumeBeat,
+    stopBeat,
+    playBeat,
+    updateAudioTime,
+    seekTo,
+  } = useAppStore();
 
-  // Simulated track duration: 30 seconds
-  const totalDuration = 30;
+  const animFrameRef = useRef<number | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
 
-  const formatTime = useCallback((seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }, []);
-
+  // Sync HTML5 Audio with Zustand state
   useEffect(() => {
-    if (isPlaying && currentlyPlaying) {
-      intervalRef.current = setInterval(() => {
-        setCurrentTime((prev) => {
-          const next = prev + 0.1;
-          if (next >= totalDuration) {
-            // Loop back
-            return 0;
-          }
-          setProgress((next / totalDuration) * 100);
-          return next;
-        });
-      }, 100);
+    const audio = getAudioElement();
+
+    const handleEnded = () => {
+      stopBeat();
+    };
+
+    const handlePlay = () => {
+      // Sync store if audio was playing natively
+    };
+
+    const handleError = () => {
+      console.error('Audio playback error');
+      pauseBeat();
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [stopBeat, pauseBeat]);
+
+  // Play/Pause sync with HTML5 Audio element
+  useEffect(() => {
+    const audio = getAudioElement();
+
+    if (isPlaying) {
+      audio.play().catch(() => {
+        // Autoplay blocked or no valid source
+        pauseBeat();
+      });
+      // Start time update loop
+      const tick = () => {
+        const el = getAudioElement();
+        if (el.duration && isFinite(el.duration)) {
+          updateAudioTime(el.currentTime, el.duration);
+        }
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      animFrameRef.current = requestAnimationFrame(tick);
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      audio.pause();
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
       }
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [isPlaying, currentlyPlaying]);
+  }, [isPlaying]);
+
+  // Load new audio source when beat changes
+  useEffect(() => {
+    const audio = getAudioElement();
+
+    if (currentlyPlaying?.audioPreviewUrl) {
+      const src = currentlyPlaying.audioPreviewUrl;
+      if (audio.src !== src && audio.currentSrc !== new URL(src, window.location.origin).href) {
+        audio.src = src;
+        audio.load();
+      }
+    }
+  }, [currentlyPlaying?.id]);
 
   const handleSeek = (value: number[]) => {
-    const seekTime = (value[0] / 100) * totalDuration;
-    setCurrentTime(seekTime);
-    setProgress(value[0]);
+    const percent = value[0];
+    const audio = getAudioElement();
+    if (audio.duration && isFinite(audio.duration)) {
+      const seekTime = (percent / 100) * audio.duration;
+      audio.currentTime = seekTime;
+      updateAudioTime(seekTime, audio.duration);
+      seekTo(percent);
+    }
+  };
+
+  const handleSkipBack = () => {
+    const audio = getAudioElement();
+    audio.currentTime = 0;
+    updateAudioTime(0, audio.duration || 0);
+  };
+
+  const handleSkipForward = () => {
+    const audio = getAudioElement();
+    if (audio.duration && isFinite(audio.duration)) {
+      // Go to 90% of the track
+      audio.currentTime = audio.duration * 0.9;
+    }
+  };
+
+  const toggleMute = () => {
+    const audio = getAudioElement();
+    audio.muted = !audio.muted;
+    setIsMuted(audio.muted);
+  };
+
+  const handleClose = () => {
+    const audio = getAudioElement();
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = '';
+    stopBeat();
   };
 
   if (!currentlyPlaying) return null;
+
+  const hasAudio = !!currentlyPlaying.audioPreviewUrl;
 
   return (
     <AnimatePresence>
@@ -66,22 +153,32 @@ export function AudioPlayerBar() {
         className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-xl"
       >
         {/* Progress bar (thin line at top) */}
-        <div className="h-0.5 bg-secondary relative cursor-pointer" onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const percent = (x / rect.width) * 100;
-          handleSeek([percent]);
-        }}>
+        <div
+          className="h-1 bg-secondary relative cursor-pointer group"
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percent = (x / rect.width) * 100;
+            handleSeek([percent]);
+          }}
+        >
           <div
             className="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-100"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${audioProgress}%` }}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ left: `${audioProgress}%`, transform: `translateX(-50%) translateY(-50%)` }}
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
+          <div className="flex items-center gap-3 sm:gap-4">
             {/* Beat info */}
-            <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-none sm:w-56">
+            <div
+              className="flex items-center gap-3 min-w-0 flex-1 sm:flex-none sm:w-56 cursor-pointer"
+              onClick={() => useAppStore.getState().selectBeat(currentlyPlaying)}
+            >
               <img
                 src={currentlyPlaying.coverUrl}
                 alt={currentlyPlaying.title}
@@ -93,17 +190,20 @@ export function AudioPlayerBar() {
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {currentlyPlaying.producer?.name}
+                  {!hasAudio && (
+                    <span className="text-amber-500 ml-1">(no audio)</span>
+                  )}
                 </p>
               </div>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-white hidden sm:flex"
-                onClick={() => { setCurrentTime(0); setProgress(0); }}
+                onClick={handleSkipBack}
               >
                 <SkipBack className="w-4 h-4" />
               </Button>
@@ -112,7 +212,14 @@ export function AudioPlayerBar() {
                 variant="ghost"
                 size="icon"
                 className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
-                onClick={() => isPlaying ? pauseBeat() : resumeBeat()}
+                onClick={() => {
+                  if (!hasAudio) {
+                    useAppStore.getState().showToast('No audio file uploaded for this beat', 'info');
+                    return;
+                  }
+                  if (isPlaying) pauseBeat();
+                  else resumeBeat();
+                }}
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5 fill-white" />
@@ -125,37 +232,48 @@ export function AudioPlayerBar() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-white hidden sm:flex"
-                onClick={() => { setCurrentTime(0); setProgress(0); }}
+                onClick={handleSkipForward}
               >
                 <SkipForward className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Time + slider */}
-            <div className="hidden sm:flex items-center gap-3 flex-1 max-w-md">
+            <div className="hidden sm:flex items-center gap-2 flex-1 max-w-md">
               <span className="text-xs text-muted-foreground font-mono w-10 text-right">
-                {formatTime(currentTime)}
+                {formatTime(audioCurrentTime)}
               </span>
               <Slider
-                value={[progress]}
+                value={[audioProgress]}
                 max={100}
                 step={0.1}
                 onValueChange={handleSeek}
                 className="flex-1"
               />
               <span className="text-xs text-muted-foreground font-mono w-10">
-                {formatTime(totalDuration)}
+                {formatTime(audioDuration)}
               </span>
             </div>
 
             {/* Volume + Close */}
-            <div className="flex items-center gap-2 ml-auto">
-              <Volume2 className="w-4 h-4 text-muted-foreground hidden sm:block" />
+            <div className="flex items-center gap-1 ml-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-white hidden sm:flex"
+                onClick={toggleMute}
+              >
+                {isMuted ? (
+                  <VolumeX className="w-4 h-4" />
+                ) : (
+                  <Volume2 className="w-4 h-4" />
+                )}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-white"
-                onClick={stopBeat}
+                onClick={handleClose}
               >
                 <X className="w-4 h-4" />
               </Button>

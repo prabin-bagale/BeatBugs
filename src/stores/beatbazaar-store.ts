@@ -99,10 +99,15 @@ interface AppState {
   // Audio player
   currentlyPlaying: Beat | null;
   isPlaying: boolean;
+  audioDuration: number;
+  audioCurrentTime: number;
+  audioProgress: number;
   playBeat: (beat: Beat) => void;
   pauseBeat: () => void;
   resumeBeat: () => void;
   stopBeat: () => void;
+  seekTo: (percent: number) => void;
+  updateAudioTime: (currentTime: number, duration: number) => void;
 
   // Browse filters
   searchQuery: string;
@@ -158,10 +163,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Audio player
   currentlyPlaying: null,
   isPlaying: false,
-  playBeat: (beat) => set({ currentlyPlaying: beat, isPlaying: true }),
+  audioDuration: 0,
+  audioCurrentTime: 0,
+  audioProgress: 0,
+  playBeat: (beat) => set({ currentlyPlaying: beat, isPlaying: true, audioProgress: 0, audioCurrentTime: 0, audioDuration: 0 }),
   pauseBeat: () => set({ isPlaying: false }),
   resumeBeat: () => set({ isPlaying: true }),
-  stopBeat: () => set({ currentlyPlaying: null, isPlaying: false }),
+  stopBeat: () => set({ currentlyPlaying: null, isPlaying: false, audioProgress: 0, audioCurrentTime: 0, audioDuration: 0 }),
+  seekTo: (percent) => set({ audioProgress: percent }),
+  updateAudioTime: (currentTime, duration) => set({
+    audioCurrentTime: currentTime,
+    audioDuration: duration,
+    audioProgress: duration > 0 ? (currentTime / duration) * 100 : 0,
+  }),
 
   // Browse filters
   searchQuery: '',
