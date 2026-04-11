@@ -145,26 +145,7 @@ export function HomeView() {
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section className="border-y border-border/50 bg-card/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            {[
-              { label: 'Beats', value: '18+', icon: Music2 },
-              { label: 'Producers', value: '5', icon: Users },
-              { label: 'Transactions', value: '100+', icon: TrendingUp },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1">
-                <stat.icon className="w-5 h-5 text-emerald-500" />
-                <span className="text-2xl sm:text-3xl font-bold">{stat.value}</span>
-                <span className="text-xs sm:text-sm text-muted-foreground">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Beats Carousel */}
+      {/* Trending Beats Carousel */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -211,6 +192,25 @@ export function HomeView() {
                   <BeatCard beat={beat} index={i} />
                 </div>
               ))}
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="border-y border-border/50 bg-card/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {[
+              { label: 'Beats', value: '18+', icon: Music2 },
+              { label: 'Producers', value: '5', icon: Users },
+              { label: 'Transactions', value: '100+', icon: TrendingUp },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-1">
+                <stat.icon className="w-5 h-5 text-emerald-500" />
+                <span className="text-2xl sm:text-3xl font-bold">{stat.value}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">{stat.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
