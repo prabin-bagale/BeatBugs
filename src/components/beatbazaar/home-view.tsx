@@ -9,7 +9,6 @@ import {
   Users,
   Headphones,
   Zap,
-  Play,
   ChevronLeft,
   ChevronRight,
   BadgeCheck,
@@ -88,25 +87,25 @@ export function HomeView() {
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/5" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28 lg:py-36">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
           <motion.div
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <Badge className="mb-6 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1.5 text-xs font-semibold">
+            <Badge className="mb-4 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1 text-xs font-semibold">
               <Zap className="w-3 h-3 mr-1.5" />
               Welcome to BeatBugs
             </Badge>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1] mb-3">
               Find Your Next
               <br />
               <span className="gradient-text">Hit Beat</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
               Buy and sell beats with local payments, instant delivery, and legal licensing.
               Built for Nepal&apos;s music creators.
             </p>
@@ -115,7 +114,7 @@ export function HomeView() {
               <Button
                 size="lg"
                 onClick={() => setView('browse')}
-                className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold h-12 px-8 text-base shadow-lg shadow-emerald-500/20"
+                className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold h-10 px-6 text-sm shadow-lg shadow-emerald-500/20"
               >
                 <Headphones className="w-5 h-5 mr-2" />
                 Browse Beats
@@ -136,7 +135,7 @@ export function HomeView() {
                     showToast('You need a producer account to sell beats', 'info');
                   }
                 }}
-                className="border-border/50 h-12 px-8 text-base hover:bg-secondary"
+                className="border-border/50 h-10 px-6 text-sm hover:bg-secondary"
               >
                 Sell Your Beats
               </Button>
@@ -146,11 +145,11 @@ export function HomeView() {
       </section>
 
       {/* Trending Beats Carousel */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="flex items-center justify-between mb-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold">Trending Beats</h2>
-            <p className="text-sm text-muted-foreground mt-1">Most popular beats right now</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Trending Beats</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Most popular beats right now</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -174,7 +173,7 @@ export function HomeView() {
 
         <div
           ref={setCarouselRef}
-          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none"
+          className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {loading
@@ -197,7 +196,7 @@ export function HomeView() {
 
       {/* Stats Bar */}
       <section className="border-y border-border/50 bg-card/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="grid grid-cols-3 gap-4 text-center">
             {[
               { label: 'Beats', value: '18+', icon: Music2 },
@@ -206,7 +205,7 @@ export function HomeView() {
             ].map((stat) => (
               <div key={stat.label} className="flex flex-col items-center gap-1">
                 <stat.icon className="w-5 h-5 text-emerald-500" />
-                <span className="text-2xl sm:text-3xl font-bold">{stat.value}</span>
+                <span className="text-xl sm:text-2xl font-bold">{stat.value}</span>
                 <span className="text-xs sm:text-sm text-muted-foreground">{stat.label}</span>
               </div>
             ))}
@@ -215,10 +214,10 @@ export function HomeView() {
       </section>
 
       {/* Genre Browsing */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold">Browse by Genre</h2>
-          <p className="text-sm text-muted-foreground mt-1">Find beats that match your style</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="text-center mb-5">
+          <h2 className="text-xl sm:text-2xl font-bold">Browse by Genre</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Find beats that match your style</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
@@ -246,19 +245,19 @@ export function HomeView() {
       </section>
 
       {/* Top Producers */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold">Top Producers</h2>
-          <p className="text-sm text-muted-foreground mt-1">Meet the talented creators behind the beats</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="text-center mb-5">
+          <h2 className="text-xl sm:text-2xl font-bold">Top Producers</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Meet the talented creators behind the beats</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {loading
             ? [...Array(5)].map((_, i) => (
-                <Card key={i} className="bg-card border-border/50 p-6">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-secondary animate-pulse" />
-                    <div className="h-4 bg-secondary rounded animate-pulse w-24" />
+                <Card key={i} className="bg-card border-border/50 p-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-secondary animate-pulse" />
+                    <div className="h-3 bg-secondary rounded animate-pulse w-20" />
                   </div>
                 </Card>
               ))
@@ -270,18 +269,18 @@ export function HomeView() {
                   transition={{ duration: 0.3, delay: i * 0.08 }}
                 >
                   <Card
-                    className="cursor-pointer bg-card border-border/50 hover:border-emerald-500/30 transition-all duration-300 group p-6 text-center"
+                    className="cursor-pointer bg-card border-border/50 hover:border-emerald-500/30 transition-all duration-300 group p-4 text-center"
                     onClick={() => selectProducer(producer.id)}
                   >
-                    <div className="relative inline-block mb-3">
+                    <div className="relative inline-block mb-2">
                       <img
                         src={producer.avatar || `https://picsum.photos/seed/${producer.id}/200/200`}
                         alt={producer.name}
-                        className="w-16 h-16 rounded-full object-cover mx-auto ring-2 ring-transparent group-hover:ring-emerald-500/50 transition-all duration-300"
+                        className="w-12 h-12 rounded-full object-cover mx-auto ring-2 ring-transparent group-hover:ring-emerald-500/50 transition-all duration-300"
                       />
                       {producer.verified && (
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                          <BadgeCheck className="w-3 h-3 text-black" />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+                          <BadgeCheck className="w-2.5 h-2.5 text-black" />
                         </div>
                       )}
                     </div>
@@ -296,19 +295,19 @@ export function HomeView() {
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border-emerald-500/20 overflow-hidden">
-          <CardContent className="p-8 sm:p-12 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+          <CardContent className="p-6 sm:p-8 text-center">
+            <h2 className="text-xl sm:text-2xl font-bold mb-3">
               Ready to Sell Your Beats?
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto mb-8">
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
               Join Nepal&apos;s growing community of music producers. Upload your beats, 
               set your prices, and start earning today.
             </p>
             <Button
               size="lg"
-              className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold h-12 px-8"
+              className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold h-10 px-6"
               onClick={() => {
                 if (!currentUser) {
                   showToast('Please sign up as a producer to sell beats', 'info');
