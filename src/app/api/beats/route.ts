@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const genre = searchParams.get('genre') || '';
     const mood = searchParams.get('mood') || '';
     const bpmMin = parseInt(searchParams.get('bpmMin') || '0');
-    const bpmMax = parseInt(searchParams.get('bpmMax') || '200');
+    const bpmMax = parseInt(searchParams.get('bpmMax') || '999');
     const sortBy = searchParams.get('sortBy') || 'newest'; // newest, popular, price_low, price_high
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');

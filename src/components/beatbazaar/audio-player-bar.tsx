@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, X, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,22 +25,117 @@ export function AudioPlayerBar() {
 
   const animFrameRef = useRef<number | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const audioReadyRef = useRef(false);
+  const lastBeatIdRef = useRef<string | null>(null);
 
-  // Sync HTML5 Audio with Zustand state
+  // --- Audio playback helpers ---
+
+  const startTicking = useCallback(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    const tick = () => {
+      const el = getAudioElement();
+      if (el.duration && isFinite(el.duration)) {
+        updateAudioTime(el.currentTime, el.duration);
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    animFrameRef.current = requestAnimationFrame(tick);
+  }, [updateAudioTime]);
+
+  const stopTicking = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+  }, []);
+
+  // --- Effect 1: Load source when beat changes ---
+  useEffect(() => {
+    const audio = getAudioElement();
+    const beatId = currentlyPlaying?.id || null;
+
+    if (!beatId) return;
+    if (beatId === lastBeatIdRef.current) return;
+    lastBeatIdRef.current = beatId;
+
+    audioReadyRef.current = false;
+
+    const src = currentlyPlaying?.audioPreviewUrl;
+    if (!src) return;
+
+    // Reset and load new source
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = src;
+    audio.load();
+
+    const onReady = () => {
+      audioReadyRef.current = true;
+      // If store says we should be playing, start playback
+      if (useAppStore.getState().isPlaying) {
+        audio.play().catch(() => {
+          useAppStore.getState().pauseBeat();
+        });
+        startTicking();
+      }
+      audio.removeEventListener('canplaythrough', onReady);
+    };
+
+    const onLoadedData = () => {
+      audioReadyRef.current = true;
+      if (useAppStore.getState().isPlaying) {
+        audio.play().catch(() => {
+          useAppStore.getState().pauseBeat();
+        });
+        startTicking();
+      }
+      audio.removeEventListener('loadeddata', onLoadedData);
+    };
+
+    // Use loadeddata for data URIs (fires faster than canplaythrough)
+    audio.addEventListener('loadeddata', onLoadedData);
+    audio.addEventListener('canplaythrough', onReady);
+
+    return () => {
+      audio.removeEventListener('canplaythrough', onReady);
+      audio.removeEventListener('loadeddata', onLoadedData);
+    };
+  }, [currentlyPlaying?.id, startTicking]);
+
+  // --- Effect 2: Play/Pause toggle (when source already loaded) ---
+  useEffect(() => {
+    const audio = getAudioElement();
+
+    if (isPlaying) {
+      if (audioReadyRef.current) {
+        // Source is ready, play immediately
+        audio.play().catch(() => {
+          pauseBeat();
+        });
+        startTicking();
+      }
+      // If not ready, the loadeddata handler will auto-play
+    } else {
+      audio.pause();
+      stopTicking();
+    }
+  }, [isPlaying, pauseBeat, startTicking, stopTicking]);
+
+  // --- Effect 3: Global audio events ---
   useEffect(() => {
     const audio = getAudioElement();
 
     const handleEnded = () => {
       stopBeat();
+      stopTicking();
+      audioReadyRef.current = false;
     };
 
-    const handlePlay = () => {
-      // Sync store if audio was playing natively
-    };
-
-    const handleError = () => {
-      console.error('Audio playback error');
+    const handleError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      console.error('Audio error:', target.error?.message || 'Unknown error');
       pauseBeat();
+      stopTicking();
     };
 
     audio.addEventListener('ended', handleEnded);
@@ -49,66 +144,9 @@ export function AudioPlayerBar() {
     return () => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
+      stopTicking();
     };
-  }, [stopBeat, pauseBeat]);
-
-  // Play/Pause sync with HTML5 Audio element
-  useEffect(() => {
-    const audio = getAudioElement();
-
-    if (isPlaying) {
-      audio.play().catch(() => {
-        // Autoplay blocked or no valid source
-        pauseBeat();
-      });
-      // Start time update loop
-      const tick = () => {
-        const el = getAudioElement();
-        if (el.duration && isFinite(el.duration)) {
-          updateAudioTime(el.currentTime, el.duration);
-        }
-        animFrameRef.current = requestAnimationFrame(tick);
-      };
-      animFrameRef.current = requestAnimationFrame(tick);
-    } else {
-      audio.pause();
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-    }
-
-    return () => {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-    };
-  }, [isPlaying]);
-
-  // Load new audio source when beat changes
-  useEffect(() => {
-    const audio = getAudioElement();
-
-    if (currentlyPlaying?.audioPreviewUrl) {
-      const src = currentlyPlaying.audioPreviewUrl;
-      // For data URIs or regular URLs, just compare by beat ID change
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = src;
-      audio.load();
-      // Auto-play after loading
-      audio.oncanplaythrough = () => {
-        if (useAppStore.getState().isPlaying) {
-          audio.play().catch(() => {
-            useAppStore.getState().pauseBeat();
-          });
-        }
-        audio.oncanplaythrough = null;
-      };
-    }
-  }, [currentlyPlaying?.id]);
+  }, [stopBeat, pauseBeat, stopTicking]);
 
   const handleSeek = (value: number[]) => {
     const percent = value[0];
@@ -130,7 +168,6 @@ export function AudioPlayerBar() {
   const handleSkipForward = () => {
     const audio = getAudioElement();
     if (audio.duration && isFinite(audio.duration)) {
-      // Go to 90% of the track
       audio.currentTime = audio.duration * 0.9;
     }
   };
@@ -146,6 +183,9 @@ export function AudioPlayerBar() {
     audio.pause();
     audio.currentTime = 0;
     audio.src = '';
+    audioReadyRef.current = false;
+    lastBeatIdRef.current = null;
+    stopTicking();
     stopBeat();
   };
 

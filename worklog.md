@@ -123,3 +123,28 @@ Stage Summary:
 - "Recently Added" section shows latest 6 beats on home page as card grid
 - Audio player properly handles data URI sources from uploaded beats
 - Producer can upload, see beat in dashboard, navigate home, see in Recently Added, and play it
+---
+Task ID: 6
+Agent: Main Agent
+Task: Fix BoomBap not showing in Recently Added, fix audio player not playing
+
+Work Log:
+- **Root cause 1 — BPM filter**: API `/api/beats` had `bpmMax` defaulting to `200`. User's "BoomBap" beat has BPM 220, so it was filtered out of ALL listings (Recently Added, Trending, Browse)
+  - Fixed: Changed default `bpmMax` from `200` to `999` in `/api/beats/route.ts`
+  - Updated browse view BPM filter placeholders from `200` to `300` and range from `60-200` to `40-300`
+  - Verified: BoomBap now appears as #1 in `?sortBy=newest` API response
+- **Root cause 2 — Audio player race condition**: When `playBeat()` was called, store updated `currentlyPlaying` and `isPlaying` simultaneously. Two useEffect hooks fired at once: one setting `audio.src` + `audio.load()`, another calling `audio.play()`. The play() ran before the data URI finished loading, causing failure
+  - Complete rewrite of `AudioPlayerBar`:
+    - Added `audioReadyRef` to track when audio source is loaded
+    - Added `lastBeatIdRef` to prevent duplicate source loads
+    - Source loading effect: uses `loadeddata` event (fires faster for data URIs), then auto-plays if `isPlaying` is true
+    - Play/pause effect: only plays if `audioReadyRef.current` is true; otherwise waits for loadeddata handler
+    - Proper cleanup in all effects
+    - Error handler now logs the actual error message
+- ESLint passes with 0 errors, dev server compiles successfully
+
+Stage Summary:
+- BoomBap (BPM 220) now correctly appears in Recently Added section
+- All beats with BPM up to 999 are now included in listings
+- Audio player properly handles data URI sources — waits for load, then plays
+- No more race conditions between source loading and playback

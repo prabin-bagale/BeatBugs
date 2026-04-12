@@ -205,8 +205,8 @@ export function BrowseView() {
                 <Input
                   type="number"
                   placeholder="60"
-                  min="60"
-                  max="200"
+                  min="40"
+                  max="300"
                   className="bg-secondary border-border/50 h-9 text-sm"
                   value={bpmMin}
                   onChange={(e) => setBpmMin(e.target.value)}
@@ -217,9 +217,9 @@ export function BrowseView() {
                 <Label className="text-xs text-muted-foreground">BPM Max</Label>
                 <Input
                   type="number"
-                  placeholder="200"
-                  min="60"
-                  max="200"
+                  placeholder="300"
+                  min="40"
+                  max="300"
                   className="bg-secondary border-border/50 h-9 text-sm"
                   value={bpmMax}
                   onChange={(e) => setBpmMax(e.target.value)}
