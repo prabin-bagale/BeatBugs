@@ -160,9 +160,9 @@ export function ProducerDashboard() {
       return;
     }
 
-    // Validate file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      useAppStore.getState().showToast('Audio file must be under 50MB', 'error');
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      useAppStore.getState().showToast('Audio file must be under 10MB', 'error');
       return;
     }
 
@@ -370,7 +370,7 @@ export function ProducerDashboard() {
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">Click to upload audio</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">MP3, WAV, OGG, AAC, FLAC (max 50MB)</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">MP3, WAV, OGG, AAC, FLAC (max 10MB)</p>
                     </div>
                     <input
                       ref={audioInputRef}

@@ -27,6 +27,8 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
       pauseBeat();
     } else {
       playBeat(beat);
+      // Increment plays count (fire and forget)
+      fetch(`/api/beats/${beat.id}`, { method: 'GET' }).catch(() => {});
     }
   };
 

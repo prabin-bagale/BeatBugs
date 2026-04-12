@@ -93,10 +93,20 @@ export function AudioPlayerBar() {
 
     if (currentlyPlaying?.audioPreviewUrl) {
       const src = currentlyPlaying.audioPreviewUrl;
-      if (audio.src !== src && audio.currentSrc !== new URL(src, window.location.origin).href) {
-        audio.src = src;
-        audio.load();
-      }
+      // For data URIs or regular URLs, just compare by beat ID change
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = src;
+      audio.load();
+      // Auto-play after loading
+      audio.oncanplaythrough = () => {
+        if (useAppStore.getState().isPlaying) {
+          audio.play().catch(() => {
+            useAppStore.getState().pauseBeat();
+          });
+        }
+        audio.oncanplaythrough = null;
+      };
     }
   }, [currentlyPlaying?.id]);
 

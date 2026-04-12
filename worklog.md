@@ -98,3 +98,28 @@ Stage Summary:
 - Mix of Unicode music notes (♪♫♩♬) in emerald/teal + emoji symbols (🎵🎶🎼🔊🎤🎧🎹)
 - Much more dramatic and visible than the previous near-invisible Lucide icon approach
 - Equalizer bars also slightly more visible
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix beat upload, add Recently Added section, fix audio player
+
+Work Log:
+- **Root cause found**: Producer dashboard POSTs to `/api/upload` but route didn't exist
+- Created `/api/upload/route.ts`: accepts FormData, converts audio to base64 data URI, saves cover as base64, validates required fields, verifies producer exists, creates Beat record in DB with producer include
+- Added backend file size validation (max 10MB for audio)
+- Reduced frontend audio file limit from 50MB to 10MB
+- **Fixed audio player** data URI bug: old code used `new URL(dataUri, origin)` which throws on data URIs. Replaced with simple approach — always reload src when beat ID changes, with `oncanplaythrough` auto-play handler
+- **Added "Recently Added" section** to home page between Trending Beats and Top Producers
+  - Fetches beats sorted by newest (`/api/beats?sortBy=newest&limit=6`)
+  - Displays as 6-column responsive grid of BeatCards
+  - Shows empty state with "No beats yet" message
+  - "View All" button navigates to browse view sorted by newest
+  - Uses Clock icon from Lucide
+- Added plays increment when playing a beat from a card (fire-and-forget GET to beat detail)
+- ESLint passes with 0 errors, dev server compiles successfully
+
+Stage Summary:
+- Beat upload now works end-to-end: form → /api/upload → SQLite DB with base64 audio/cover
+- "Recently Added" section shows latest 6 beats on home page as card grid
+- Audio player properly handles data URI sources from uploaded beats
+- Producer can upload, see beat in dashboard, navigate home, see in Recently Added, and play it

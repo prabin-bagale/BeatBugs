@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BadgeCheck,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -119,6 +120,7 @@ function EqualizerBars() {
 export function HomeView() {
   const { setView, selectBeat, selectProducer, setSelectedGenre, setSearchQuery, currentUser, openAuth, showToast } = useAppStore();
   const [featuredBeats, setFeaturedBeats] = useState<Beat[]>([]);
+  const [recentBeats, setRecentBeats] = useState<Beat[]>([]);
   const [topProducers, setTopProducers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [carouselRef, setCarouselRef] = useState<HTMLDivElement | null>(null);
@@ -126,15 +128,18 @@ export function HomeView() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [beatsRes, producersRes] = await Promise.all([
+        const [beatsRes, recentRes, producersRes] = await Promise.all([
           fetch('/api/beats?sortBy=popular&limit=6'),
+          fetch('/api/beats?sortBy=newest&limit=6'),
           fetch('/api/auth?role=producer'),
         ]);
 
         const beatsData = await beatsRes.json();
+        const recentData = await recentRes.json();
         const producersData = await producersRes.json();
 
         setFeaturedBeats(beatsData.beats || []);
+        setRecentBeats(recentData.beats || []);
         setTopProducers((producersData.users || []).slice(0, 5));
       } catch (err) {
         console.error('Failed to fetch home data:', err);
@@ -286,6 +291,57 @@ export function HomeView() {
                 </div>
               ))}
         </div>
+      </section>
+
+      {/* Recently Added */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-500" />
+              Recently Added
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Fresh beats just uploaded by producers</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-emerald-500 hover:text-emerald-400 text-xs"
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedGenre('');
+              useAppStore.getState().setSortBy('newest');
+              setView('browse');
+            }}
+          >
+            View All
+            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
+        </div>
+
+        {recentBeats.length === 0 && !loading ? (
+          <Card className="bg-card border-border/50 p-8 text-center">
+            <Music2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-medium mb-1">No beats yet</h3>
+            <p className="text-sm text-muted-foreground">Be the first to upload a beat!</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {loading
+              ? [...Array(6)].map((_, i) => (
+                  <Card key={i} className="bg-card border-border/50 overflow-hidden">
+                    <div className="aspect-square bg-secondary animate-pulse" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 bg-secondary rounded animate-pulse" />
+                      <div className="h-3 bg-secondary rounded animate-pulse w-2/3" />
+                    </div>
+                  </Card>
+                ))
+              : recentBeats.map((beat, i) => (
+                  <BeatCard key={beat.id} beat={beat} index={i} />
+                ))}
+          </div>
+        )}
       </section>
 
       {/* Top Producers */}
