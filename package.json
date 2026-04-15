@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
-    "build": "prisma generate && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "build": "prisma generate && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && rm -rf .next/standalone/node_modules/typescript .next/standalone/node_modules/@img .next/standalone/node_modules/sharp .next/standalone/node_modules/detect-libc && rm -f .next/standalone/node_modules/.prisma/client/runtime/*sqlserver* .next/standalone/node_modules/.prisma/client/runtime/*mysql* .next/standalone/node_modules/.prisma/client/runtime/*postgresql* .next/standalone/node_modules/.prisma/client/runtime/*cockroachdb* .next/standalone/node_modules/.prisma/client/runtime/*react-native* .next/standalone/node_modules/.prisma/client/runtime/wasm-compiler* .next/standalone/node_modules/.prisma/client/runtime/wasm-engine-edge*; true",
     "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push",
