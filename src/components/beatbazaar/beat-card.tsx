@@ -5,6 +5,7 @@ import { Play, Pause, Eye, ShoppingCart, BadgeCheck, Music, AlertCircle } from '
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore, type Beat } from '@/stores/beatbazaar-store';
+import { isValidAudioUrl } from '@/lib/audio-player';
 
 interface BeatCardProps {
   beat: Beat;
@@ -15,7 +16,7 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
   const { selectBeat, playBeat, pauseBeat, currentlyPlaying, isPlaying, showToast } = useAppStore();
 
   const isCurrentBeat = currentlyPlaying?.id === beat.id;
-  const hasAudio = !!beat.audioPreviewUrl;
+  const hasAudio = isValidAudioUrl(beat.audioPreviewUrl);
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();

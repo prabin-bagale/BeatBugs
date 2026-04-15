@@ -39,3 +39,14 @@ export function formatTime(seconds: number): string {
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+/**
+ * Check if an audioPreviewUrl is actually playable.
+ * Valid: data:audio/... URIs, http/https URLs
+ * Invalid: '#', empty string, relative paths like '/audio/x.mp3' (no public files)
+ */
+export function isValidAudioUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  // Must be a data URI (uploaded beats) or a full http/https URL
+  return url.startsWith('data:audio/') || url.startsWith('http://') || url.startsWith('https://');
+}
