@@ -1,8 +1,7 @@
-import { db, ensureSeeded } from '@/lib/db';
+import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  await ensureSeeded();
   try {
     const searchParams = request.nextUrl.searchParams;
     const producerId = searchParams.get('producerId') || '';
