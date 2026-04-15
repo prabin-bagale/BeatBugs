@@ -55,9 +55,7 @@ server.log
 # Skills directory
 /skills/
 
-# Database files (too large for deployment)
-/db/
-*.db
+# Database temp files
 *.db-journal
 *.db-wal
 *.db-shm
