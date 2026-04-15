@@ -1,9 +1,11 @@
 import { db } from '@/lib/db';
+import { ensureSeeded } from '@/lib/seed';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET producers list
 export async function GET(request: NextRequest) {
   try {
+    await ensureSeeded();
     const searchParams = request.nextUrl.searchParams;
     const role = searchParams.get('role') || '';
 
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
 // POST login/signup (simulated)
 export async function POST(request: NextRequest) {
   try {
+    await ensureSeeded();
     const body = await request.json();
     const { email, name, role, action } = body; // action: 'login' or 'signup'
 

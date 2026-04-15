@@ -1,10 +1,12 @@
 import { db } from '@/lib/db';
+import { ensureSeeded } from '@/lib/seed';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureSeeded();
     const formData = await request.formData();
 
     const audio = formData.get('audio') as File | null;

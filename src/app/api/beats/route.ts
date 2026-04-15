@@ -1,8 +1,10 @@
 import { db } from '@/lib/db';
+import { ensureSeeded } from '@/lib/seed';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
+    await ensureSeeded();
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
     const genre = searchParams.get('genre') || '';
