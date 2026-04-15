@@ -191,3 +191,28 @@ Stage Summary:
 - Start script uses node (not bun) for platform compatibility
 - All servers (dev, standalone production) tested and working
 - Changes committed to git for platform deployment
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix PreconditionFailed deployment error - deep platform investigation
+
+Work Log:
+- Investigated the full deployment pipeline by reading /start.sh
+- Discovered platform is Alibaba Cloud FC container with ZAI control service on port 12600
+- Platform runs: bun install → bun run db:push → bun run dev (local) + builds for cloud deploy
+- Build output goes to /tmp/build_fullstack_*/ directories with standalone Next.js
+- Found 14 previous build attempts, some empty (builds that failed/hung)
+- Found deployment start.sh checks for /app/db/custom.db with strict validation
+- Root cause: `prisma db push` in build script was hanging on read-only build filesystem
+- Also found start.sh uses `bun server.js` which requires bun runtime
+- Fixed build script: removed `prisma db push`, now just `prisma generate && next build` (12s)
+- Restored DATABASE_URL to absolute path `file:/home/z/my-project/db/custom.db`
+- Runtime seeding via seed.ts handles DB schema creation and data population
+- Committed changes
+
+Stage Summary:
+- Build completes in 12 seconds (was potentially hanging before)
+- No database operations during build (all at runtime via seed.ts)
+- App confirmed working locally on port 3000 and Caddy port 81
+- The PreconditionFailed may need time to clear from the platform's pending queue
