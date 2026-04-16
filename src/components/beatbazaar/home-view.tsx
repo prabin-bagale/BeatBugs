@@ -13,6 +13,14 @@ import {
   ChevronRight,
   BadgeCheck,
   Clock,
+  Search,
+  ShoppingCart,
+  CreditCard,
+  Download,
+  Upload,
+  DollarSign,
+  FileText,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,15 +28,66 @@ import { Badge } from '@/components/ui/badge';
 import { BeatCard } from './beat-card';
 import { useAppStore, type Beat, type User } from '@/stores/beatbazaar-store';
 
-const GENRES = [
-  { name: 'NepHop', color: 'from-emerald-500 to-teal-600', icon: '🎤' },
-  { name: 'Lo-Fi', color: 'from-amber-500 to-orange-600', icon: '🎧' },
-  { name: 'Drill', color: 'from-red-500 to-rose-600', icon: '🔥' },
-  { name: 'Trap', color: 'from-purple-500 to-fuchsia-600', icon: '💥' },
-  { name: 'Folk Fusion', color: 'from-yellow-500 to-amber-600', icon: '🪕' },
-  { name: 'R&B', color: 'from-pink-500 to-rose-600', icon: '🎶' },
-  { name: 'Afrobeat', color: 'from-orange-500 to-red-600', icon: '🥁' },
-  { name: 'Hip-Hop', color: 'from-teal-500 to-cyan-600', icon: '🎤' },
+const BUYER_STEPS = [
+  {
+    step: 1,
+    title: 'Browse Beats',
+    description: 'Explore hundreds of beats by genre, mood, BPM, or producer. Preview audio before you buy.',
+    icon: Search,
+    color: 'text-emerald-500 bg-emerald-500/10',
+  },
+  {
+    step: 2,
+    title: 'Choose a License',
+    description: 'Pick Basic for demos, Premium for streaming, or Exclusive for full ownership.',
+    icon: FileText,
+    color: 'text-teal-500 bg-teal-500/10',
+  },
+  {
+    step: 3,
+    title: 'Pay Securely',
+    description: 'Checkout with eSewa or Khalti. Instant confirmation and receipt.',
+    icon: CreditCard,
+    color: 'text-amber-500 bg-amber-500/10',
+  },
+  {
+    step: 4,
+    title: 'Download & Create',
+    description: 'Get your licensed beat instantly. Start recording your next hit track.',
+    icon: Download,
+    color: 'text-purple-500 bg-purple-500/10',
+  },
+];
+
+const PRODUCER_STEPS = [
+  {
+    step: 1,
+    title: 'Create Account',
+    description: 'Sign up as a producer. Set up your profile and get verified.',
+    icon: Users,
+    color: 'text-emerald-500 bg-emerald-500/10',
+  },
+  {
+    step: 2,
+    title: 'Upload Your Beats',
+    description: 'Upload audio files, set prices for 3 license tiers, and add metadata.',
+    icon: Upload,
+    color: 'text-teal-500 bg-teal-500/10',
+  },
+  {
+    step: 3,
+    title: 'Set Your Prices',
+    description: 'Choose Basic, Premium, and Exclusive pricing. You control your earnings.',
+    icon: DollarSign,
+    color: 'text-amber-500 bg-amber-500/10',
+  },
+  {
+    step: 4,
+    title: 'Earn & Grow',
+    description: 'Get paid directly to your wallet. Track sales and grow your audience.',
+    icon: TrendingUp,
+    color: 'text-purple-500 bg-purple-500/10',
+  },
 ];
 
 /* Floating music symbols for the hero background */
@@ -164,10 +223,7 @@ export function HomeView() {
     });
   };
 
-  const handleGenreClick = (genre: string) => {
-    setSelectedGenre(genre);
-    setView('browse');
-  };
+
 
   return (
     <motion.div
@@ -418,34 +474,101 @@ export function HomeView() {
         </div>
       </section>
 
-      {/* Genre Browsing */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="text-center mb-5">
-          <h2 className="text-xl sm:text-2xl font-bold">Browse by Genre</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Find beats that match your style</p>
+      {/* How it Works */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
+        <div className="text-center mb-8">
+          <Badge className="mb-3 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1 text-xs font-semibold">
+            <Zap className="w-3 h-3 mr-1.5" />
+            Simple Process
+          </Badge>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">How It Works</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">Get started in minutes — whether you&apos;re buying beats or selling them</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-          {GENRES.map((genre, i) => (
-            <motion.div
-              key={genre.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-            >
-              <Card
-                className="cursor-pointer overflow-hidden bg-card border-border/50 hover:border-emerald-500/30 transition-all duration-300 group"
-                onClick={() => handleGenreClick(genre.name)}
-              >
-                <CardContent className="p-4 sm:p-5">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${genre.color} flex items-center justify-center text-lg sm:text-xl mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                    {genre.icon}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Buyer Process */}
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Headphones className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">For Buyers</h3>
+                <p className="text-xs text-muted-foreground">Find and license the perfect beat</p>
+              </div>
+            </div>
+
+            <div className="space-y-0 relative">
+              {/* Vertical connector line */}
+              <div className="absolute left-5 top-10 bottom-10 w-px bg-gradient-to-b from-emerald-500/30 via-teal-500/20 to-purple-500/10" />
+
+              {BUYER_STEPS.map((step, i) => (
+                <motion.div
+                  key={step.step}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
+                  className="flex gap-4 relative"
+                >
+                  {/* Step number circle */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 font-bold text-sm ${step.color}`}>
+                    {step.step}
                   </div>
-                  <h3 className="font-semibold text-sm sm:text-base text-white">{genre.name}</h3>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                  <Card className="flex-1 bg-card border-border/50 hover:border-emerald-500/20 transition-all duration-300 mb-3">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <step.icon className="w-4 h-4 text-muted-foreground" />
+                        <h4 className="font-semibold text-sm">{step.title}</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{step.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Producer Process */}
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <Music2 className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">For Producers</h3>
+                <p className="text-xs text-muted-foreground">Upload beats and start earning</p>
+              </div>
+            </div>
+
+            <div className="space-y-0 relative">
+              {/* Vertical connector line */}
+              <div className="absolute left-5 top-10 bottom-10 w-px bg-gradient-to-b from-emerald-500/30 via-teal-500/20 to-purple-500/10" />
+
+              {PRODUCER_STEPS.map((step, i) => (
+                <motion.div
+                  key={step.step}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
+                  className="flex gap-4 relative"
+                >
+                  {/* Step number circle */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 font-bold text-sm ${step.color}`}>
+                    {step.step}
+                  </div>
+                  <Card className="flex-1 bg-card border-border/50 hover:border-purple-500/20 transition-all duration-300 mb-3">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <step.icon className="w-4 h-4 text-muted-foreground" />
+                        <h4 className="font-semibold text-sm">{step.title}</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{step.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
