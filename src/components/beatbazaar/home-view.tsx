@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -149,7 +149,35 @@ export function HomeView() {
   const [topProducers, setTopProducers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [carouselRef, setCarouselRef] = useState<HTMLDivElement | null>(null);
+  const [producerRef, setProducerRef] = useState<HTMLDivElement | null>(null);
   const fetchedRef = useRef(false);
+  const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-advance producer slider every 4s
+  const advanceProducer = useCallback((direction: 'left' | 'right') => {
+    if (!producerRef || topProducers.length === 0) return;
+    const cardWidth = producerRef.firstElementChild?.clientWidth || 280;
+    const gap = 16;
+    const maxScroll = producerRef.scrollWidth - producerRef.clientWidth;
+    const current = producerRef.scrollLeft;
+    let next: number;
+    if (direction === 'right') {
+      next = current + cardWidth + gap;
+      if (next >= maxScroll) next = 0;
+    } else {
+      next = current - cardWidth - gap;
+      if (next < 0) next = maxScroll;
+    }
+    producerRef.scrollTo({ left: next, behavior: 'smooth' });
+  }, [producerRef, topProducers.length]);
+
+  useEffect(() => {
+    if (!topProducers.length) return;
+    autoSlideRef.current = setInterval(() => {
+      advanceProducer('right');
+    }, 4000);
+    return () => { if (autoSlideRef.current) clearInterval(autoSlideRef.current); };
+  }, [advanceProducer, topProducers.length]);
 
   useEffect(() => {
     // Prevent double fetch in StrictMode
@@ -371,53 +399,142 @@ export function HomeView() {
         )}
       </section>
 
-      {/* Top Producers */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="text-center mb-5">
-          <h2 className="text-xl sm:text-2xl font-bold">Top Producers</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Meet the talented creators behind the beats</p>
-        </div>
+      {/* Top Producers — Portrait Card Slider */}
+      <section className="relative overflow-hidden">
+        {/* Textured dark background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-secondary/40 via-secondary/20 to-secondary/40" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {loading
-            ? [...Array(5)].map((_, i) => (
-                <Card key={i} className="bg-card border-border/50 p-4">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-secondary animate-pulse" />
-                    <div className="h-3 bg-secondary rounded animate-pulse w-20" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          {/* Header with navigation */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold">
+                Producers who{' '}
+                <span className="gradient-text">trust us</span>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Meet the talented creators behind the beats</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-border/50 bg-card/50 hover:bg-card"
+                onClick={() => advanceProducer('left')}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-border/50 bg-card/50 hover:bg-card"
+                onClick={() => advanceProducer('right')}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Slider container */}
+          <div
+            ref={setProducerRef}
+            className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onMouseEnter={() => { if (autoSlideRef.current) clearInterval(autoSlideRef.current); }}
+            onMouseLeave={() => {
+              autoSlideRef.current = setInterval(() => advanceProducer('right'), 4000);
+            }}
+          >
+            {loading
+              ? [...Array(4)].map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-[260px] sm:w-[280px] snap-start">
+                    <Card className="bg-card/80 border-border/40 backdrop-blur-sm overflow-hidden">
+                      <div className="aspect-[4/5] bg-secondary animate-pulse" />
+                      <div className="p-4 space-y-3">
+                        <div className="h-4 bg-secondary rounded animate-pulse w-3/4" />
+                        <div className="h-3 bg-secondary rounded animate-pulse w-1/2" />
+                        <div className="h-3 bg-secondary rounded animate-pulse w-full" />
+                        <div className="h-3 bg-secondary rounded animate-pulse w-4/5" />
+                      </div>
+                    </Card>
                   </div>
-                </Card>
-              ))
-            : topProducers.map((producer, i) => (
-                <motion.div
-                  key={producer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.08 }}
-                >
-                  <Card
-                    className="cursor-pointer bg-card border-border/50 hover:border-emerald-500/30 transition-all duration-300 group p-4 text-center"
-                    onClick={() => selectProducer(producer.id)}
-                  >
-                    <div className="relative inline-block mb-2">
-                      <img
-                        src={producer.avatar || `https://picsum.photos/seed/${producer.id}/200/200`}
-                        alt={producer.name}
-                        className="w-12 h-12 rounded-full object-cover mx-auto ring-2 ring-transparent group-hover:ring-emerald-500/50 transition-all duration-300"
-                      />
-                      {producer.verified && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-                          <BadgeCheck className="w-2.5 h-2.5 text-black" />
+                ))
+              : topProducers.map((producer, i) => {
+                  const bios: Record<string, string> = {
+                    'BeatMaker NP': 'Creating fire beats from Kathmandu. Hip-hop & trap is my soul.',
+                    'NepFlippa': 'From the streets of Pokhara — lo-fi and chill beats that heal.',
+                    'Rhythm King': '8 years in the game. Every beat tells a story of Nepal.',
+                    'BassNepal': 'Heavy 808s, emotional melodies. Let\'s make hits together.',
+                    'MelodyCraft': 'Melodies that move you. Soundtrack of the new generation.',
+                  };
+                  return (
+                    <motion.div
+                      key={producer.id}
+                      initial={{ opacity: 0, x: 40 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: i * 0.1 }}
+                      className="flex-shrink-0 w-[260px] sm:w-[280px] snap-start"
+                    >
+                      <Card
+                        className="cursor-pointer bg-card/80 border-border/40 backdrop-blur-sm overflow-hidden hover:border-emerald-500/30 transition-all duration-500 group"
+                        onClick={() => selectProducer(producer.id)}
+                      >
+                        {/* Portrait image */}
+                        <div className="relative aspect-[4/5] overflow-hidden">
+                          <img
+                            src={producer.avatar || `https://picsum.photos/seed/${producer.id}/400/500`}
+                            alt={producer.name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          {/* Gradient overlay at bottom of image */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                          {/* Verified badge */}
+                          {producer.verified && (
+                            <div className="absolute top-3 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                              <BadgeCheck className="w-4 h-4 text-black" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-sm text-white group-hover:text-emerald-400 transition-colors">
-                      {producer.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Producer</p>
-                  </Card>
-                </motion.div>
+
+                        {/* Content */}
+                        <div className="p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">
+                              {producer.name}
+                            </h3>
+                            {producer.verified && (
+                              <Badge className="bg-emerald-500/10 text-emerald-500 border-0 text-[10px] px-1.5 py-0">
+                                Verified
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Music Producer</p>
+                          <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-3">
+                            &ldquo;{bios[producer.name] || 'Making beats that inspire the next generation of Nepali artists.'}&rdquo;
+                          </p>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+          </div>
+
+          {/* Slide indicator dots */}
+          {!loading && topProducers.length > 0 && (
+            <div className="flex justify-center gap-2 mt-6">
+              {Array.from({ length: Math.max(1, topProducers.length - 3) }).map((_, i) => (
+                <button
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30 transition-all duration-300 hover:bg-muted-foreground/50"
+                  aria-label={`Go to slide ${i + 1}`}
+                />
               ))}
+            </div>
+          )}
         </div>
       </section>
 
