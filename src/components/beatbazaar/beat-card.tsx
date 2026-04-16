@@ -58,11 +58,10 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePlay}
-              className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 shadow-lg cursor-pointer ${
-                hasRealAudio
-                  ? 'bg-emerald-500 shadow-emerald-500/30'
-                  : 'bg-secondary shadow-secondary/30'
+              className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 shadow-xl cursor-pointer ${
+                hasRealAudio ? 'shadow-emerald-500/30' : 'shadow-secondary/30'
               }`}
+              style={{ backgroundColor: hasRealAudio ? '#10b981' : '#27272a' }}
             >
               {isCurrentBeat && isPlaying ? (
                 <Pause className="w-6 h-6 text-black fill-black" />

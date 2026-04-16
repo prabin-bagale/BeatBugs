@@ -230,14 +230,15 @@ export function BeatDetailView() {
               alt={beat.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
             {/* Play button overlay */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePlay}
-              className="absolute bottom-6 right-6 w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition-colors"
+              className="absolute bottom-6 right-6 z-20 w-16 h-16 rounded-full flex items-center justify-center shadow-xl cursor-pointer"
+              style={{ backgroundColor: '#10b981' }}
             >
               {beatIsPlaying ? (
                 <Pause className="w-7 h-7 text-black fill-black" />
