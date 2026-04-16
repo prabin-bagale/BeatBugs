@@ -21,12 +21,14 @@ export function AudioPlayerBar() {
     playBeat,
     updateAudioTime,
     seekTo,
+    showToast,
   } = useAppStore();
 
   const animFrameRef = useRef<number | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const audioReadyRef = useRef(false);
   const lastBeatIdRef = useRef<string | null>(null);
+  const errorShownRef = useRef(false);
 
   // --- Audio playback helpers ---
 
@@ -59,6 +61,7 @@ export function AudioPlayerBar() {
     lastBeatIdRef.current = beatId;
 
     audioReadyRef.current = false;
+    errorShownRef.current = false;
 
     const src = currentlyPlaying?.audioPreviewUrl;
     if (!src) return;
@@ -133,7 +136,16 @@ export function AudioPlayerBar() {
 
     const handleError = (e: Event) => {
       const target = e.target as HTMLAudioElement;
-      console.error('Audio error:', target.error?.message || 'Unknown error');
+      const errorMsg = target.error?.message || 'Unknown error';
+      console.error('Audio error:', errorMsg);
+
+      // Show toast only once per beat to avoid spam
+      if (!errorShownRef.current) {
+        errorShownRef.current = true;
+        const beatTitle = useAppStore.getState().currentlyPlaying?.title || 'this beat';
+        showToast(`Couldn't play "${beatTitle}" — audio file not available`, 'info');
+      }
+
       pauseBeat();
       stopTicking();
     };
@@ -146,7 +158,7 @@ export function AudioPlayerBar() {
       audio.removeEventListener('error', handleError);
       stopTicking();
     };
-  }, [stopBeat, pauseBeat, stopTicking]);
+  }, [stopBeat, pauseBeat, stopTicking, showToast]);
 
   const handleSeek = (value: number[]) => {
     const percent = value[0];
@@ -185,6 +197,7 @@ export function AudioPlayerBar() {
     audio.src = '';
     audioReadyRef.current = false;
     lastBeatIdRef.current = null;
+    errorShownRef.current = false;
     stopTicking();
     stopBeat();
   };
@@ -264,7 +277,7 @@ export function AudioPlayerBar() {
                 className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
                 onClick={() => {
                   if (!hasAudio) {
-                    useAppStore.getState().showToast('No audio file uploaded for this beat', 'info');
+                    showToast('No audio file uploaded for this beat', 'info');
                     return;
                   }
                   if (isPlaying) pauseBeat();

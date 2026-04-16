@@ -258,3 +258,32 @@ Stage Summary:
 - All 18 beats now showing in Trending and Recently Added sections
 - All API routes healthy (200 status codes)
 
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix beat upload form, Recently Added section, and audio player
+
+Work Log:
+- Tested upload API via curl — confirmed it works (HTTP 201, file saved to public/uploads/audio/)
+- Identified root cause: user must be logged in as producer before uploading, but UI had no auth gate
+- Fixed producer-dashboard.tsx: added auth gate (shows login/signup if not logged in, warns if buyer account)
+- Added client-side form validation with inline error messages for audio, title, genre, BPM fields
+- Increased max audio file size from 10MB to 50MB
+- After successful upload, auto-navigates to home view so user sees beat in Recently Added
+- Fixed home-view.tsx: increased Recently Added limit from 6 to 12 beats for more visibility
+- Added useRef to prevent double-fetch in StrictMode
+- Fixed beat-card.tsx: distinguishes between real uploaded audio and demo seed beats
+- Demo beats show "Demo" badge instead of "No audio" — clearer UX
+- Fixed audio-player-bar.tsx: added errorShownRef to prevent toast spam on audio errors
+- Audio player now shows descriptive toast when audio file can't be played
+- All hooks moved before early returns in producer-dashboard to fix react-hooks/rules-of-hooks lint error
+- Ran lint — all clean, 0 errors
+- Verified uploaded beat appears first in Recently Added (sorted by newest)
+- Verified audio file accessible at /uploads/audio/uuid.mp3 (HTTP 200)
+
+Stage Summary:
+- Upload form now works with proper validation and auth gating
+- Newly uploaded beats automatically appear in Recently Added section on home page
+- Audio player properly plays uploaded beats and shows clear messages for demo beats
+- All changes pass lint checks

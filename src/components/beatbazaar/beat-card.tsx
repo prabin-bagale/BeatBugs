@@ -15,18 +15,17 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
   const { selectBeat, playBeat, pauseBeat, currentlyPlaying, isPlaying, showToast } = useAppStore();
 
   const isCurrentBeat = currentlyPlaying?.id === beat.id;
-  const hasAudio = !!beat.audioPreviewUrl;
+  const hasRealAudio = !!beat.audioPreviewUrl && !beat.audioPreviewUrl.startsWith('/audio/');
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hasAudio) {
-      showToast('No audio file for this beat', 'info');
-      return;
-    }
     if (isCurrentBeat && isPlaying) {
       pauseBeat();
     } else {
       playBeat(beat);
+      if (!hasRealAudio) {
+        showToast('Demo beat — no audio preview available. Upload your own beat to listen!', 'info');
+      }
       // Increment plays count (fire and forget)
       fetch(`/api/beats/${beat.id}`, { method: 'GET' }).catch(() => {});
     }
@@ -60,7 +59,7 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
               whileTap={{ scale: 0.95 }}
               onClick={handlePlay}
               className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg ${
-                hasAudio
+                hasRealAudio
                   ? 'bg-emerald-500 shadow-emerald-500/30'
                   : 'bg-secondary shadow-secondary/30'
               }`}
@@ -68,7 +67,7 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
               {isCurrentBeat && isPlaying ? (
                 <Pause className="w-6 h-6 text-black fill-black" />
               ) : (
-                <Play className={`w-6 h-6 ml-0.5 ${hasAudio ? 'text-black fill-black' : 'text-muted-foreground'}`} />
+                <Play className={`w-6 h-6 ml-0.5 ${hasRealAudio ? 'text-black fill-black' : 'text-muted-foreground'}`} />
               )}
             </motion.button>
           </div>
@@ -91,11 +90,11 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
           <div className="absolute top-3 right-3 bg-emerald-500/90 text-black text-xs font-bold px-2 py-1 rounded-md backdrop-blur-sm">
             NPR {beat.basicPrice.toLocaleString()}
           </div>
-          {/* Audio status badge */}
-          {!hasAudio && (
+          {/* Audio status badge - only show for demo beats without real audio */}
+          {!hasRealAudio && (
             <div className="absolute bottom-3 right-3 bg-amber-500/80 text-black text-[9px] font-semibold px-1.5 py-0.5 rounded backdrop-blur-sm flex items-center gap-1">
-              <AlertCircle className="w-2.5 h-2.5" />
-              No audio
+              <Music className="w-2.5 h-2.5" />
+              Demo
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -124,13 +124,18 @@ export function HomeView() {
   const [topProducers, setTopProducers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [carouselRef, setCarouselRef] = useState<HTMLDivElement | null>(null);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double fetch in StrictMode
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     async function fetchData() {
       try {
         const [beatsRes, recentRes, producersRes] = await Promise.all([
           fetch('/api/beats?sortBy=popular&limit=6'),
-          fetch('/api/beats?sortBy=newest&limit=6'),
+          fetch('/api/beats?sortBy=newest&limit=12'),
           fetch('/api/auth?role=producer'),
         ]);
 
@@ -328,7 +333,7 @@ export function HomeView() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {loading
-              ? [...Array(6)].map((_, i) => (
+              ? [...Array(12)].map((_, i) => (
                   <Card key={i} className="bg-card border-border/50 overflow-hidden">
                     <div className="aspect-square bg-secondary animate-pulse" />
                     <div className="p-3 space-y-2">
@@ -337,7 +342,7 @@ export function HomeView() {
                     </div>
                   </Card>
                 ))
-              : recentBeats.map((beat, i) => (
+              : recentBeats.slice(0, 12).map((beat, i) => (
                   <BeatCard key={beat.id} beat={beat} index={i} />
                 ))}
           </div>

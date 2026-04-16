@@ -17,6 +17,7 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,11 +92,12 @@ interface DashboardData {
 }
 
 export function ProducerDashboard() {
-  const { currentUser } = useAppStore();
+  const { currentUser, setView, openAuth, showToast } = useAppStore();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Upload form
   const [uploadForm, setUploadForm] = useState({
@@ -156,17 +158,18 @@ export function ProducerDashboard() {
     // Validate file type
     const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/flac', 'audio/webm'];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|aac|flac|webm|m4a)$/i)) {
-      useAppStore.getState().showToast('Please upload an audio file (MP3, WAV, OGG, AAC, FLAC)', 'error');
+      showToast('Please upload an audio file (MP3, WAV, OGG, AAC, FLAC)', 'error');
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      useAppStore.getState().showToast('Audio file must be under 10MB', 'error');
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      showToast('Audio file must be under 50MB', 'error');
       return;
     }
 
     setAudioFile(file);
+    setFieldErrors(prev => ({ ...prev, audio: '' }));
     if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
     const url = URL.createObjectURL(file);
     setAudioPreviewUrl(url);
@@ -185,13 +188,13 @@ export function ProducerDashboard() {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      useAppStore.getState().showToast('Please upload an image file (JPG, PNG, WebP)', 'error');
+      showToast('Please upload an image file (JPG, PNG, WebP)', 'error');
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      useAppStore.getState().showToast('Cover image must be under 10MB', 'error');
+      showToast('Cover image must be under 10MB', 'error');
       return;
     }
 
@@ -236,20 +239,38 @@ export function ProducerDashboard() {
     if (coverInputRef.current) coverInputRef.current.value = '';
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!audioFile) errors.audio = 'Audio file is required';
+    if (!uploadForm.title.trim()) errors.title = 'Beat title is required';
+    if (!uploadForm.genre) errors.genre = 'Please select a genre';
+    if (!uploadForm.bpm || parseInt(uploadForm.bpm) < 30 || parseInt(uploadForm.bpm) > 300) {
+      errors.bpm = 'BPM must be between 30 and 300';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!audioFile) {
-      useAppStore.getState().showToast('Please upload an audio file', 'error');
+    setFieldErrors({});
+
+    // Client-side validation
+    if (!validateForm()) {
+      const firstError = Object.values(fieldErrors)[0];
+      if (firstError) showToast(firstError, 'error');
       return;
     }
 
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('audio', audioFile);
+      formData.append('audio', audioFile!);
       if (coverFile) formData.append('cover', coverFile);
-      formData.append('title', uploadForm.title);
-      formData.append('description', uploadForm.description);
+      formData.append('title', uploadForm.title.trim());
+      formData.append('description', uploadForm.description.trim());
       formData.append('genre', uploadForm.genre);
       formData.append('bpm', uploadForm.bpm);
       formData.append('key', uploadForm.key);
@@ -258,7 +279,7 @@ export function ProducerDashboard() {
       formData.append('basicPrice', uploadForm.basicPrice);
       formData.append('premiumPrice', uploadForm.premiumPrice);
       formData.append('exclusivePrice', uploadForm.exclusivePrice);
-      formData.append('producerId', currentUser?.id || '');
+      formData.append('producerId', currentUser!.id);
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -268,17 +289,24 @@ export function ProducerDashboard() {
       const data = await res.json();
 
       if (res.ok) {
-        useAppStore.getState().showToast('Beat uploaded successfully! It will appear in browse shortly.', 'success');
+        showToast('Beat uploaded successfully! Check Recently Added on the home page.', 'success');
         setUploadOpen(false);
         resetForm();
         // Refresh dashboard
-        const dashRes = await fetch(`/api/dashboard?producerId=${currentUser?.id}`);
-        setDashboard(await dashRes.json());
+        try {
+          const dashRes = await fetch(`/api/dashboard?producerId=${currentUser!.id}`);
+          setDashboard(await dashRes.json());
+        } catch {}
+        // Navigate to home to see the beat in Recently Added
+        setTimeout(() => setView('home'), 600);
       } else {
-        useAppStore.getState().showToast(data.error || 'Failed to upload beat', 'error');
+        showToast(data.error || 'Failed to upload beat', 'error');
+        if (data.error?.includes('Producer')) {
+          setFieldErrors(prev => ({ ...prev, producer: data.error }));
+        }
       }
     } catch {
-      useAppStore.getState().showToast('Network error. Please try again.', 'error');
+      showToast('Network error. Please check your connection and try again.', 'error');
     } finally {
       setUploading(false);
     }
@@ -297,9 +325,62 @@ export function ProducerDashboard() {
       premiumPrice: '2999',
       exclusivePrice: '9999',
     });
+    setFieldErrors({});
     removeAudioFile();
     removeCoverFile();
   };
+
+  // --- Auth gate ---
+  if (!currentUser) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md mx-auto px-4 py-20 text-center"
+      >
+        <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+          <Music2 className="w-8 h-8 text-emerald-500" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Sign in to Continue</h2>
+        <p className="text-muted-foreground mb-6">You need a producer account to access the dashboard and upload beats.</p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button
+            onClick={() => openAuth('login')}
+            className="bg-emerald-500 hover:bg-emerald-600 text-black font-semibold"
+          >
+            Log In
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => openAuth('signup')}
+            className="border-border/50"
+          >
+            Create Producer Account
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (currentUser.role !== 'producer') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md mx-auto px-4 py-20 text-center"
+      >
+        <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8 text-amber-500" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Producer Account Required</h2>
+        <p className="text-muted-foreground mb-6">Only producers can upload beats. Your current account is a buyer account.</p>
+        <Button onClick={() => setView('home')} variant="outline" className="border-border/50">
+          <Home className="w-4 h-4 mr-2" />
+          Back to Home
+        </Button>
+      </motion.div>
+    );
+  }
 
   if (loading) {
     return (
@@ -364,13 +445,21 @@ export function ProducerDashboard() {
                   Audio File <span className="text-destructive">*</span>
                 </Label>
                 {!audioFile ? (
-                  <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-border/70 cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
-                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                      <Upload className="w-5 h-5 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                  <label className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all group ${
+                    fieldErrors.audio
+                      ? 'border-destructive/50 hover:border-destructive bg-destructive/5'
+                      : 'border-border/70 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                  }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                      fieldErrors.audio ? 'bg-destructive/10' : 'bg-secondary group-hover:bg-emerald-500/10'
+                    }`}>
+                      <Upload className={`w-5 h-5 transition-colors ${
+                        fieldErrors.audio ? 'text-destructive' : 'text-muted-foreground group-hover:text-emerald-500'
+                      }`} />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">Click to upload audio</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">MP3, WAV, OGG, AAC, FLAC (max 10MB)</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">MP3, WAV, OGG, AAC, FLAC (max 50MB)</p>
                     </div>
                     <input
                       ref={audioInputRef}
@@ -425,6 +514,11 @@ export function ProducerDashboard() {
                       </div>
                     </div>
                   </div>
+                )}
+                {fieldErrors.audio && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.audio}
+                  </p>
                 )}
               </div>
 
@@ -482,18 +576,28 @@ export function ProducerDashboard() {
                 <Label className="text-sm">Beat Title <span className="text-destructive">*</span></Label>
                 <Input
                   placeholder="Enter beat title"
-                  className="bg-secondary border-border/50"
+                  className={`bg-secondary ${fieldErrors.title ? 'border-destructive/50 focus:border-destructive' : 'border-border/50'}`}
                   value={uploadForm.title}
-                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setUploadForm({ ...uploadForm, title: e.target.value });
+                    if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, title: '' }));
+                  }}
                 />
+                {fieldErrors.title && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.title}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-sm">Genre <span className="text-destructive">*</span></Label>
-                  <Select value={uploadForm.genre} onValueChange={(v) => setUploadForm({ ...uploadForm, genre: v })}>
-                    <SelectTrigger className="bg-secondary border-border/50">
+                  <Select value={uploadForm.genre} onValueChange={(v) => {
+                    setUploadForm({ ...uploadForm, genre: v });
+                    setFieldErrors(prev => ({ ...prev, genre: '' }));
+                  }}>
+                    <SelectTrigger className={`bg-secondary ${fieldErrors.genre ? 'border-destructive/50' : 'border-border/50'}`}>
                       <SelectValue placeholder="Select genre" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border/50">
@@ -502,17 +606,31 @@ export function ProducerDashboard() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {fieldErrors.genre && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {fieldErrors.genre}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm">BPM <span className="text-destructive">*</span></Label>
                   <Input
                     type="number"
                     placeholder="140"
-                    className="bg-secondary border-border/50"
+                    min={30}
+                    max={300}
+                    className={`bg-secondary ${fieldErrors.bpm ? 'border-destructive/50 focus:border-destructive' : 'border-border/50'}`}
                     value={uploadForm.bpm}
-                    onChange={(e) => setUploadForm({ ...uploadForm, bpm: e.target.value })}
-                    required
+                    onChange={(e) => {
+                      setUploadForm({ ...uploadForm, bpm: e.target.value });
+                      setFieldErrors(prev => ({ ...prev, bpm: '' }));
+                    }}
                   />
+                  {fieldErrors.bpm && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {fieldErrors.bpm}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -606,17 +724,10 @@ export function ProducerDashboard() {
                 </div>
               </div>
 
-              {!audioFile && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <p className="text-xs text-amber-500">Audio file is required to upload a beat.</p>
-                </div>
-              )}
-
               <Button
                 type="submit"
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-semibold h-11"
-                disabled={uploading || !audioFile}
+                disabled={uploading}
               >
                 {uploading ? (
                   <>
@@ -753,7 +864,7 @@ export function ProducerDashboard() {
               </TableHeader>
               <TableBody>
                 {myBeats.map((beat) => (
-                  <TableRow key={beat.id} className="border-border/30">
+                  <TableRow key={beat.id} className="border-border/30 cursor-pointer hover:bg-secondary/50" onClick={() => useAppStore.getState().selectBeat(beat)}>
                     <TableCell>
                       <img src={beat.coverUrl} alt={beat.title} className="w-10 h-10 rounded-md object-cover" />
                     </TableCell>
