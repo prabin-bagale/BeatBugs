@@ -53,12 +53,12 @@ export function BeatCard({ beat, index = 0 }: BeatCardProps) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center z-10">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePlay}
-              className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg ${
+              className={`w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 shadow-lg cursor-pointer ${
                 hasRealAudio
                   ? 'bg-emerald-500 shadow-emerald-500/30'
                   : 'bg-secondary shadow-secondary/30'
