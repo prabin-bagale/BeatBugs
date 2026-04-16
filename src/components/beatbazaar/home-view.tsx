@@ -450,16 +450,13 @@ export function HomeView() {
           >
             {loading
               ? [...Array(4)].map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-[260px] sm:w-[280px] snap-start">
-                    <Card className="bg-card/80 border-border/40 backdrop-blur-sm overflow-hidden">
-                      <div className="aspect-[4/5] bg-secondary animate-pulse" />
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 bg-secondary rounded animate-pulse w-3/4" />
-                        <div className="h-3 bg-secondary rounded animate-pulse w-1/2" />
-                        <div className="h-3 bg-secondary rounded animate-pulse w-full" />
-                        <div className="h-3 bg-secondary rounded animate-pulse w-4/5" />
-                      </div>
-                    </Card>
+                  <div key={i} className="flex-shrink-0 w-[200px] sm:w-[220px] snap-start flex flex-col items-center text-center">
+                    <div className="w-full aspect-square rounded-full bg-secondary animate-pulse" />
+                    <div className="mt-4 space-y-2 w-full">
+                      <div className="h-4 bg-secondary rounded animate-pulse w-3/4 mx-auto" />
+                      <div className="h-3 bg-secondary rounded animate-pulse w-1/2 mx-auto" />
+                      <div className="h-3 bg-secondary rounded animate-pulse w-full mx-auto" />
+                    </div>
                   </div>
                 ))
               : topProducers.map((producer, i) => {
@@ -477,47 +474,40 @@ export function HomeView() {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.4, delay: i * 0.1 }}
-                      className="flex-shrink-0 w-[260px] sm:w-[280px] snap-start"
+                      className="flex-shrink-0 w-[200px] sm:w-[220px] snap-start flex flex-col items-center text-center"
                     >
-                      <Card
-                        className="cursor-pointer bg-card/80 border-border/40 backdrop-blur-sm overflow-hidden hover:border-emerald-500/30 transition-all duration-500 group"
+                      {/* Round portrait image */}
+                      <div
+                        className="relative w-full aspect-square rounded-full overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-emerald-500/50 transition-all duration-500 group"
                         onClick={() => selectProducer(producer.id)}
                       >
-                        {/* Portrait image */}
-                        <div className="relative aspect-[4/5] overflow-hidden">
-                          <img
-                            src={producer.avatar || `https://picsum.photos/seed/${producer.id}/400/500`}
-                            alt={producer.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                          {/* Gradient overlay at bottom of image */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          {/* Verified badge */}
-                          {producer.verified && (
-                            <div className="absolute top-3 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                              <BadgeCheck className="w-4 h-4 text-black" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">
-                              {producer.name}
-                            </h3>
-                            {producer.verified && (
-                              <Badge className="bg-emerald-500/10 text-emerald-500 border-0 text-[10px] px-1.5 py-0">
-                                Verified
-                              </Badge>
-                            )}
+                        <img
+                          src={producer.avatar || `https://picsum.photos/seed/${producer.id}/400/400`}
+                          alt={producer.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-full" />
+                        {/* Verified badge */}
+                        {producer.verified && (
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-3 ring-black/50">
+                            <BadgeCheck className="w-4 h-4 text-black" />
                           </div>
-                          <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Music Producer</p>
-                          <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-3">
-                            &ldquo;{bios[producer.name] || 'Making beats that inspire the next generation of Nepali artists.'}&rdquo;
-                          </p>
-                        </div>
-                      </Card>
+                        )}
+                        {/* Subtle border ring */}
+                        <div className="absolute inset-0 rounded-full ring-1 ring-white/10" />
+                      </div>
+
+                      {/* Content below circle */}
+                      <div className="mt-4 px-1" onClick={() => selectProducer(producer.id)}>
+                        <h3 className="font-bold text-sm text-white hover:text-emerald-400 transition-colors cursor-pointer">
+                          {producer.name}
+                        </h3>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-medium uppercase tracking-widest">Music Producer</p>
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed mt-2 line-clamp-2">
+                          &ldquo;{bios[producer.name] || 'Making beats that inspire the next generation of Nepali artists.'}&rdquo;
+                        </p>
+                      </div>
                     </motion.div>
                   );
                 })}
