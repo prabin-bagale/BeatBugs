@@ -24,51 +24,35 @@ import { useAppStore, type Beat, type User } from '@/stores/beatbazaar-store';
 const FLOW_STEPS = [
   {
     icon: '🎹',
-    label: 'Create',
-    sub: 'Producer makes a beat',
+    label: 'Create & Upload',
+    sub: 'Producer drops a beat, it goes live',
     color: 'from-violet-500/20 to-purple-600/20',
     ring: 'ring-violet-500/30',
     glow: 'rgba(139,92,246,0.15)',
   },
   {
-    icon: '🚀',
-    label: 'Upload',
-    sub: 'Beat goes live instantly',
+    icon: '🔍',
+    label: 'Discover & Preview',
+    sub: 'Buyers find, listen & choose',
     color: 'from-emerald-500/20 to-teal-600/20',
     ring: 'ring-emerald-500/30',
     glow: 'rgba(16,185,129,0.15)',
   },
   {
-    icon: '🔍',
-    label: 'Discover',
-    sub: 'Buyers find & preview',
-    color: 'from-sky-500/20 to-cyan-600/20',
-    ring: 'ring-sky-500/30',
-    glow: 'rgba(14,165,233,0.15)',
-  },
-  {
     icon: '💳',
-    label: 'License',
-    sub: 'Pick tier & pay securely',
+    label: 'License & Pay',
+    sub: 'Pick a tier, checkout securely',
     color: 'from-amber-500/20 to-orange-600/20',
     ring: 'ring-amber-500/30',
     glow: 'rgba(245,158,11,0.15)',
   },
   {
-    icon: '📥',
-    label: 'Download',
-    sub: 'Get beat & license file',
+    icon: '💰',
+    label: 'Download & Earn',
+    sub: 'Buyer gets beat, producer gets paid',
     color: 'from-rose-500/20 to-pink-600/20',
     ring: 'ring-rose-500/30',
     glow: 'rgba(244,63,94,0.15)',
-  },
-  {
-    icon: '💰',
-    label: 'Earn',
-    sub: 'Producer gets paid',
-    color: 'from-emerald-500/20 to-green-600/20',
-    ring: 'ring-emerald-500/30',
-    glow: 'rgba(16,185,129,0.2)',
   },
 ];
 
@@ -502,7 +486,7 @@ export function HomeView() {
             </div>
 
             {/* Steps Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
               {FLOW_STEPS.map((step, i) => (
                 <motion.div
                   key={step.label}
