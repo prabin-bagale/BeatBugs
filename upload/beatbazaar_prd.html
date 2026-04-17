@@ -1,0 +1,406 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .prd { max-width: 860px; padding: 2rem 0; }
+  .cover { padding: 2.5rem 2rem; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); margin-bottom: 2rem; border: 0.5px solid var(--color-border-tertiary); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; margin-right: 6px; margin-bottom: 6px; }
+  .badge-teal { background: #E1F5EE; color: #0F6E56; }
+  .badge-amber { background: #FAEEDA; color: #854F0B; }
+  .badge-coral { background: #FAECE7; color: #993C1D; }
+  .badge-blue { background: #E6F1FB; color: #185FA5; }
+  .badge-purple { background: #EEEDFE; color: #3C3489; }
+  .cover-title { font-size: 28px; font-weight: 500; color: var(--color-text-primary); margin: 1rem 0 0.4rem; line-height: 1.2; }
+  .cover-sub { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 1.2rem; }
+  .cover-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 13px; color: var(--color-text-tertiary); border-top: 0.5px solid var(--color-border-tertiary); padding-top: 1rem; margin-top: 1rem; }
+  .cover-meta span b { color: var(--color-text-secondary); font-weight: 500; }
+  .section { margin-bottom: 2rem; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
+  .section-title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
+  .divider { height: 0.5px; background: var(--color-border-tertiary); margin: 2rem 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+  .card-accent-teal { border-left: 3px solid #1D9E75; border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0; }
+  .card-accent-amber { border-left: 3px solid #EF9F27; border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0; }
+  .card-accent-coral { border-left: 3px solid #D85A30; border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0; }
+  .card-accent-purple { border-left: 3px solid #7F77DD; border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0; }
+  .card-accent-blue { border-left: 3px solid #378ADD; border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0; }
+  .card h3 { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.4rem; }
+  .card p { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+  .metric-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; }
+  .metric-label { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .metric-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .flow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .flow-step { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 13px; color: var(--color-text-primary); white-space: nowrap; }
+  .flow-arrow { color: var(--color-text-tertiary); font-size: 14px; }
+  .flow-label { font-size: 12px; color: var(--color-text-tertiary); font-weight: 500; margin-bottom: 6px; }
+  .risk-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-severity { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; white-space: nowrap; margin-top: 1px; }
+  .sev-high { background: #FAECE7; color: #993C1D; }
+  .sev-med { background: #FAEEDA; color: #854F0B; }
+  .sev-low { background: #EAF3DE; color: #3B6D11; }
+  .risk-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+  .risk-text b { color: var(--color-text-primary); font-weight: 500; }
+  .phase-bar { display: flex; gap: 0; margin-bottom: 1rem; border-radius: var(--border-radius-md); overflow: hidden; border: 0.5px solid var(--color-border-tertiary); }
+  .phase-seg { flex: 1; padding: 10px 12px; font-size: 12px; font-weight: 500; }
+  .ph1 { background: #E1F5EE; color: #0F6E56; }
+  .ph2 { background: #E6F1FB; color: #185FA5; }
+  .ph3 { background: #FAEEDA; color: #854F0B; }
+  .mvp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mvp-yes { background: #EAF3DE; border-radius: var(--border-radius-md); padding: 1rem; }
+  .mvp-no { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; }
+  .mvp-yes h4 { font-size: 13px; font-weight: 500; color: #3B6D11; margin-bottom: 8px; }
+  .mvp-no h4 { font-size: 13px; font-weight: 500; color: var(--color-text-tertiary); margin-bottom: 8px; }
+  .mvp-item { font-size: 12px; padding: 4px 0; color: #27500A; display: flex; align-items: center; gap: 6px; }
+  .mvp-item-no { font-size: 12px; padding: 4px 0; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 6px; }
+  .check { color: #639922; font-size: 14px; }
+  .ex { color: var(--color-text-tertiary); font-size: 14px; }
+  .license-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .license-table th { text-align: left; font-weight: 500; color: var(--color-text-secondary); padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); font-size: 12px; }
+  .license-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+  .license-table tr:last-child td { border-bottom: none; }
+  .tech-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .tech-item { font-size: 12px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 5px 12px; color: var(--color-text-secondary); }
+  .highlight-box { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; border: 0.5px solid var(--color-border-tertiary); }
+  .highlight-box p { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; }
+  .revenue-row { display: flex; align-items: baseline; gap: 8px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .revenue-row:last-child { border-bottom: none; }
+  .revenue-pct { font-size: 18px; font-weight: 500; color: var(--color-text-primary); min-width: 60px; }
+  .revenue-desc { font-size: 13px; color: var(--color-text-secondary); }
+  .revenue-desc b { color: var(--color-text-primary); font-weight: 500; }
+  @media (max-width: 560px) { .grid-2, .grid-3, .grid-4, .mvp-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="prd">
+  <h2 class="sr-only">BeatBazaar Product Requirements Document — Nepal's first digital beat marketplace</h2>
+
+  <div class="cover">
+    <div>
+      <span class="badge badge-teal">v1.0 — MVP</span>
+      <span class="badge badge-amber">Nepal Market</span>
+      <span class="badge badge-coral">Web Platform</span>
+    </div>
+    <div class="cover-title">BeatBazaar</div>
+    <div class="cover-sub">Nepal's first trusted digital marketplace for buying and selling beats — with local payments, instant delivery, and legal licensing built in.</div>
+    <div class="cover-meta">
+      <span><b>Product type</b> — Marketplace + SaaS</span>
+      <span><b>Phase 1 target</b> — Web (MVP)</span>
+      <span><b>Phase 2</b> — Mobile app</span>
+      <span><b>Status</b> — Pre-build</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">01 — Problem &amp; Vision</div>
+    <div class="grid-2">
+      <div class="card card-accent-coral">
+        <h3>The gaps today</h3>
+        <p>Producers earn inconsistently. Artists rely on personal networks. No trusted licensing system exists in Nepal. Payments are fragmented across informal channels. Piracy goes unchecked.</p>
+      </div>
+      <div class="card card-accent-teal">
+        <h3>What we're building</h3>
+        <p>A platform where producers upload and sell beats, artists buy legally with instant downloads, and everything — licensing, payments, delivery — is automated and trusted.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">02 — Target users</div>
+    <div class="grid-2">
+      <div>
+        <div class="flow-label" style="margin-bottom:10px;">Producers (sellers)</div>
+        <div class="card" style="margin-bottom:8px;">
+          <h3>Nepali hip-hop producers</h3>
+          <p>Core NepHop scene creators looking for a legit sales channel beyond DMs and informal deals.</p>
+        </div>
+        <div class="card" style="margin-bottom:8px;">
+          <h3>YouTube beat creators</h3>
+          <p>Creators already distributing content online who want a monetization layer with licensing protection.</p>
+        </div>
+        <div class="card">
+          <h3>Freelancers (Fiverr / Upwork)</h3>
+          <p>Producers who want a local platform that handles NRS payments and legal agreements automatically.</p>
+        </div>
+      </div>
+      <div>
+        <div class="flow-label" style="margin-bottom:10px;">Buyers</div>
+        <div class="card" style="margin-bottom:8px;">
+          <h3>Rappers &amp; indie artists</h3>
+          <p>NepHop scene artists who need licensed beats for releases on Spotify, YouTube, and TikTok.</p>
+        </div>
+        <div class="card" style="margin-bottom:8px;">
+          <h3>Content creators</h3>
+          <p>YouTubers and TikTok creators needing cleared audio for monetized content without copyright strikes.</p>
+        </div>
+        <div class="card">
+          <h3>Agencies &amp; studios</h3>
+          <p>Production houses wanting a reliable B2B source for licensed Nepali-style beats and stems.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">03 — Success metrics</div>
+    <div class="grid-4">
+      <div class="metric-card">
+        <div class="metric-label">Producers</div>
+        <div class="metric-value">1,000+</div>
+        <div class="metric-sub">within 6 months</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Beats uploaded</div>
+        <div class="metric-value">10k+</div>
+        <div class="metric-sub">on platform</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Monthly transactions</div>
+        <div class="metric-value">500+</div>
+        <div class="metric-sub">target by month 6</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Primary KPI</div>
+        <div class="metric-value">CVR</div>
+        <div class="metric-sub">listen → purchase</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">04 — MVP scope</div>
+    <div class="mvp-grid" style="margin-bottom:1rem;">
+      <div class="mvp-yes">
+        <h4>Build now (MVP)</h4>
+        <div class="mvp-item"><span class="check">✓</span> User auth (producer + buyer roles)</div>
+        <div class="mvp-item"><span class="check">✓</span> Beat upload with metadata</div>
+        <div class="mvp-item"><span class="check">✓</span> Audio preview player</div>
+        <div class="mvp-item"><span class="check">✓</span> Licensing system (3 tiers)</div>
+        <div class="mvp-item"><span class="check">✓</span> eSewa + Khalti payments</div>
+        <div class="mvp-item"><span class="check">✓</span> Instant download delivery</div>
+        <div class="mvp-item"><span class="check">✓</span> Auto PDF license contract</div>
+        <div class="mvp-item"><span class="check">✓</span> Seller earnings dashboard</div>
+      </div>
+      <div class="mvp-no">
+        <h4>Defer to Phase 2+</h4>
+        <div class="mvp-item-no"><span class="ex">–</span> Buyer ↔ producer messaging</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Waveform visualization</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Follower system</div>
+        <div class="mvp-item-no"><span class="ex">–</span> AI tools</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Advanced analytics</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Mobile app</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Vocal marketplace</div>
+        <div class="mvp-item-no"><span class="ex">–</span> Abandoned cart emails</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">05 — Licensing tiers</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="license-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Exclusivity</th>
+            <th>Platforms</th>
+            <th>Duration</th>
+            <th>Price signal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-teal">Basic lease</span></td>
+            <td>Non-exclusive</td>
+            <td>YouTube, TikTok</td>
+            <td>1 year</td>
+            <td>Entry-level</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-blue">Premium lease</span></td>
+            <td>Non-exclusive</td>
+            <td>All platforms + Spotify</td>
+            <td>Lifetime</td>
+            <td>Mid-tier</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-purple">Exclusive</span></td>
+            <td>One buyer only</td>
+            <td>All platforms + sync</td>
+            <td>Lifetime</td>
+            <td>Premium</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:12px; color:var(--color-text-tertiary); margin-top:8px;">All tiers auto-generate a legally binding PDF contract on purchase.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">06 — User flows</div>
+    <div style="margin-bottom:1.2rem;">
+      <div class="flow-label">Buyer journey</div>
+      <div class="flow-row">
+        <div class="flow-step">Search / browse</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Play preview</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Select license tier</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Pay via eSewa/Khalti</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Download WAV + PDF</div>
+      </div>
+    </div>
+    <div>
+      <div class="flow-label">Producer journey</div>
+      <div class="flow-row">
+        <div class="flow-step">Sign up</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Upload beat + metadata</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Set prices per tier</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Order received</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">Withdraw earnings</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">07 — Nepal-specific differentiators</div>
+    <div class="grid-2">
+      <div class="card card-accent-purple">
+        <h3>Local payment stack</h3>
+        <p>eSewa, Khalti, and IME Pay integrations as first-class citizens — not an afterthought. Stripe for international buyers. Instant payout to producer wallets.</p>
+      </div>
+      <div class="card card-accent-amber">
+        <h3>Genre-native discovery</h3>
+        <p>Filters built for NepHop: Lok + hip-hop fusion, Dohori modern, Folk fusion, Drill. "Artist type beat" filter (e.g. Yabesh Thapa type).</p>
+      </div>
+      <div class="card card-accent-teal">
+        <h3>Pay-later safety net</h3>
+        <p>For users hesitant about online payments: reserve a beat and complete payment manually. Reduces drop-off from digital payment anxiety.</p>
+      </div>
+      <div class="card card-accent-blue">
+        <h3>English ↔ Nepali toggle</h3>
+        <p>Full bilingual UI from day one. Platform language follows user preference, not just the browser locale.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">08 — Tech stack</div>
+    <div class="grid-2">
+      <div>
+        <div class="flow-label" style="margin-bottom:8px;">Frontend</div>
+        <div class="tech-row"><span class="tech-item">Next.js</span><span class="tech-item">Tailwind CSS</span><span class="tech-item">TypeScript</span></div>
+        <div class="flow-label" style="margin-bottom:8px; margin-top:12px;">Backend</div>
+        <div class="tech-row"><span class="tech-item">Node.js / NestJS</span><span class="tech-item">PostgreSQL</span><span class="tech-item">REST API</span></div>
+      </div>
+      <div>
+        <div class="flow-label" style="margin-bottom:8px;">Storage &amp; delivery</div>
+        <div class="tech-row"><span class="tech-item">AWS S3</span><span class="tech-item">Watermarked MP3 preview</span></div>
+        <div class="flow-label" style="margin-bottom:8px; margin-top:12px;">Payments</div>
+        <div class="tech-row"><span class="tech-item">Khalti API</span><span class="tech-item">eSewa API</span><span class="tech-item">Stripe (intl)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">09 — Revenue model</div>
+    <div class="card" style="padding: 1rem 1.5rem;">
+      <div class="revenue-row">
+        <div class="revenue-pct">10–20%</div>
+        <div class="revenue-desc"><b>Transaction commission</b> — taken automatically at checkout on every sale. The primary early-stage revenue driver.</div>
+      </div>
+      <div class="revenue-row">
+        <div class="revenue-pct">Monthly</div>
+        <div class="revenue-desc"><b>Pro producer subscription</b> — higher upload limits, advanced analytics, featured placement, and priority support.</div>
+      </div>
+      <div class="revenue-row">
+        <div class="revenue-pct">Ads</div>
+        <div class="revenue-desc"><b>Featured beat placements</b> — producers pay for homepage or search result visibility boosts. Phase 2 revenue stream.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">10 — Risks &amp; mitigations</div>
+    <div class="card" style="padding: 0.5rem 1.25rem;">
+      <div class="risk-row">
+        <span class="risk-severity sev-high">High</span>
+        <div class="risk-text"><b>Low trust in online payments</b> — Offer pay-later option, show verified transaction counts publicly, partner with known Nepali artists for social proof.</div>
+      </div>
+      <div class="risk-row">
+        <span class="risk-severity sev-high">High</span>
+        <div class="risk-text"><b>Piracy / beat sharing</b> — DRM watermark all previews, license verification on download, copyright reporting tool for producers.</div>
+      </div>
+      <div class="risk-row">
+        <span class="risk-severity sev-med">Med</span>
+        <div class="risk-text"><b>Chicken-and-egg supply problem</b> — Manually onboard 20–50 producers pre-launch, offer 0% commission for first 6 months, build catalog before opening to buyers.</div>
+      </div>
+      <div class="risk-row">
+        <span class="risk-severity sev-med">Med</span>
+        <div class="risk-text"><b>Small domestic market</b> — Nepal-first, but India expansion planned for Phase 3. Global reach requires English-first UX and Stripe payment support.</div>
+      </div>
+      <div class="risk-row">
+        <span class="risk-severity sev-low">Low</span>
+        <div class="risk-text"><b>Scope creep</b> — Strict MVP boundary enforced. Features deferred to Phase 2+ with clear re-evaluation triggers (500+ monthly transactions).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">11 — Launch roadmap</div>
+    <div class="phase-bar">
+      <div class="phase-seg ph1">Phase 1 — Foundation</div>
+      <div class="phase-seg ph2">Phase 2 — Growth</div>
+      <div class="phase-seg ph3">Phase 3 — Expansion</div>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Phase 1 · Months 1–3</h3>
+        <p>Manually onboard 20–50 producers. 0% commission. Build catalog. Soft launch to NepHop community. Fix UX with real user feedback.</p>
+      </div>
+      <div class="card">
+        <h3>Phase 2 · Months 4–8</h3>
+        <p>Partner with established Nepali rappers. TikTok + YouTube Shorts marketing push. Introduce Pro subscriptions. Launch messaging feature.</p>
+      </div>
+      <div class="card">
+        <h3>Phase 3 · Month 9+</h3>
+        <p>Expand to Indian market. Mobile app launch. Vocal marketplace (hire singers/lyricists). Stripe-first for international buyers.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="highlight-box">
+    <p>If executed well, this is not a "beat website." It's Nepal's first digital music economy platform — the infrastructure layer that the entire NepHop scene builds on top of.</p>
+  </div>
+</div>
